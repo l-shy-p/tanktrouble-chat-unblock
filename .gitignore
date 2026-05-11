@@ -1,0 +1,19 @@
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.sublime-*
+
+# Archives
+*.zip
+*.7z
+*.rar
+
+# Chrome extension packed
+*.crx
+*.pem
