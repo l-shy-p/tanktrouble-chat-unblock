@@ -2,215 +2,157 @@
   "use strict";
 
   // ============================================================
-  // Config / 配置
+  // Config
   // ============================================================
-  var EXT_SITE = "https://github.com/L-Shy-P/TankTrouble-Chat-Unblock";
-  // 签名不包含链接，仅说明乱码含义 / no URL in chat watermark
   var SIGNATURE = " [🌐 TT Unblock]";
   var SEND_TIMEOUT = 6000;
   var XOR_KEY = 0x5A5A;
-
-  // 本地回显去重：5 秒内相同内容不重复渲染 / dedup window
   var DEDUP_WINDOW = 5000;
 
-  // ============================================================
-  // Logging / 日志
-  // ============================================================
-  var GREEN = "color: #4f8; font-weight: bold;";
-  var YELLOW = "color: #fc0; font-weight: bold;";
-  var NONE = "color: inherit;";
-
-  function log(msg) {
-    console.log("%c[TT]%c " + msg, GREEN, NONE);
-  }
-  function warn(msg) {
-    console.warn("%c[TT]%c " + msg, YELLOW, NONE);
-  }
+  var G = "color: #4f8; font-weight: bold;";
+  var Y = "color: #fc0; font-weight: bold;";
+  var N = "color: inherit;";
+  function log(m) { console.log("%c[TT]%c " + m, G, N); }
+  function warn(m) { console.warn("%c[TT]%c " + m, Y, N); }
 
   // ============================================================
-  // Settings from storage / 读取面板设置
+  // Settings
   // ============================================================
-  var settings = {
-    signatureEnabled: true,
-    autoRecover: true,
-    enabled: true
-  };
+  var S = { sig: true, recover: true, on: true };
   var stats = { sent: 0, recv: 0 };
 
   try {
     chrome.storage.local.get(
       ["signatureEnabled", "autoRecover", "enabled", "sentCount", "recvCount"],
-      function (data) {
-        if (data.signatureEnabled !== undefined) settings.signatureEnabled = data.signatureEnabled;
-        if (data.autoRecover !== undefined) settings.autoRecover = data.autoRecover;
-        if (data.enabled !== undefined) settings.enabled = data.enabled;
-        if (data.sentCount !== undefined) stats.sent = data.sentCount;
-        if (data.recvCount !== undefined) stats.recv = data.recvCount;
+      function (d) {
+        if (d.signatureEnabled !== undefined) S.sig = d.signatureEnabled;
+        if (d.autoRecover !== undefined) S.recover = d.autoRecover;
+        if (d.enabled !== undefined) S.on = d.enabled;
+        if (d.sentCount !== undefined) stats.sent = d.sentCount;
+        if (d.recvCount !== undefined) stats.recv = d.recvCount;
       }
     );
-    chrome.storage.onChanged.addListener(function (changes, area) {
-      if (area !== "local") return;
-      if (changes.enabled) settings.enabled = changes.enabled.newValue;
-      if (changes.signatureEnabled) settings.signatureEnabled = changes.signatureEnabled.newValue;
-      if (changes.autoRecover) settings.autoRecover = changes.autoRecover.newValue;
+    chrome.storage.onChanged.addListener(function (c, a) {
+      if (a !== "local") return;
+      if (c.enabled) S.on = c.enabled.newValue;
+      if (c.signatureEnabled) S.sig = c.signatureEnabled.newValue;
+      if (c.autoRecover) S.recover = c.autoRecover.newValue;
     });
-    function incStat(key) {
-      stats[key]++;
-      try {
-        var obj = {};
-        obj[key + "Count"] = stats[key];
-        chrome.storage.local.set(obj);
-      } catch (e) {}
-    }
-  } catch (e) {
-    function incStat(key) {}
-  }
+    function incStat(k) { stats[k]++; try { var o = {}; o[k + "Count"] = stats[k]; chrome.storage.local.set(o); } catch (e) {} }
+  } catch (e) { function incStat(k) {} }
 
   // ============================================================
-  // Encode / 编码
+  // Encode / Decode
   // ============================================================
-  function hasNonAscii(str) {
-    if (!str) return false;
-    for (var i = 0; i < str.length; i++) {
-      if (str.charCodeAt(i) > 127) return true;
-    }
+  function hasNonAscii(s) {
+    if (!s) return false;
+    for (var i = 0; i < s.length; i++) { if (s.charCodeAt(i) > 127) return true; }
     return false;
   }
-
-  function encodeChar(code) {
-    var scrambled = (code ^ XOR_KEY) & 0xFFFF;
-    return "~" + ("000" + scrambled.toString(16)).slice(-4);
-  }
-
-  // 非 ASCII → XOR 加扰 → ~XXXX
-  function encodeNonAscii(str) {
-    var result = "";
-    for (var i = 0; i < str.length; i++) {
-      var code = str.charCodeAt(i);
-      var ch = str.charAt(i);
-      if (code > 127) {
-        result += encodeChar(code);
-      } else if (ch === "\\") {
-        result += "\\\\";
-      } else {
-        result += ch;
-      }
+  function encChar(c) { return "~" + ("000" + ((c ^ XOR_KEY) & 0xFFFF).toString(16)).slice(-4); }
+  function encode(s) {
+    var r = "";
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i);
+      if (c > 127) r += encChar(c);
+      else if (s.charAt(i) === "\\") r += "\\\\";
+      else r += s.charAt(i);
     }
-    return result;
+    return r;
+  }
+  function descramble(h) { return String.fromCharCode((parseInt(h, 16) ^ XOR_KEY) & 0xFFFF); }
+  function decode(s) {
+    if (!s) return s;
+    return s.replace(/~([0-9a-fA-F]{4})/g, function (_, h) { return descramble(h); });
+  }
+  function stripSig(s) {
+    if (!s) return s;
+    var i = s.lastIndexOf(" [🌐 TT Unblock]");
+    return i >= 0 ? s.substring(0, i).replace(/\s+$/, "") : s;
   }
 
   // ============================================================
-  // Decode / 解码
+  // Local echo dedup
   // ============================================================
-  function descrambleHex(hex) {
-    var val = parseInt(hex, 16);
-    return String.fromCharCode((val ^ XOR_KEY) & 0xFFFF);
-  }
-
-  // ~XXXX → XOR 解扰 → 原字符
-  function decodeUnicodeEscapes(str) {
-    if (!str) return str;
-    return str.replace(/~([0-9a-fA-F]{4})/g, function (_, hex) {
-      return descrambleHex(hex);
-    });
-  }
-
-  // 剥离签名 for extension users / 扩展用户去签名
-  function stripSignature(str) {
-    if (!str) return str;
-    var sigStart = str.lastIndexOf(" [🌐 TT Unblock]");
-    if (sigStart >= 0) {
-      return str.substring(0, sigStart).replace(/\s+$/, "");
-    }
-    return str;
-  }
-
-  // ============================================================
-  // 本地回显去重 / Local echo dedup
-  // ============================================================
-  var recentSends = [];  // [{text, time}]
-
-  function addRecentSend(text) {
+  var recent = [];
+  function addRecent(t) {
     var now = Date.now();
-    recentSends.push({ text: text, time: now });
-    // 清理过期记录 / purge old entries
-    recentSends = recentSends.filter(function (r) {
-      return now - r.time < DEDUP_WINDOW;
-    });
+    recent.push({ t: t, ts: now });
+    recent = recent.filter(function (r) { return now - r.ts < DEDUP_WINDOW; });
   }
-
-  function isRecentSend(text) {
+  function isRecent(t) {
     var now = Date.now();
-    for (var i = 0; i < recentSends.length; i++) {
-      if (recentSends[i].text === text && now - recentSends[i].time < DEDUP_WINDOW) {
-        return true;
-      }
+    for (var i = 0; i < recent.length; i++) {
+      if (recent[i].t === t && now - recent[i].ts < DEDUP_WINDOW) return true;
     }
     return false;
   }
 
   // ============================================================
-  // Hook ChatBox / 挂钩
+  // Hook
   // ============================================================
-  function hookChatBox() {
+  function hook() {
     var TT = window.TankTrouble;
     if (!TT || !TT.ChatBox) return false;
     var CB = TT.ChatBox;
-    log("ChatBox ready");
+    log("ready");
 
-    // 解除输入长度限制
     try { CB.chatInput.removeAttr("maxlength"); } catch (e) {}
 
-    // ========================================================
-    // 1. sendChat — 入口
-    // ========================================================
-    var origSendChat = CB.sendChat;
-    CB.sendChat = function () {
-      if (!settings.enabled) return origSendChat.apply(this, arguments);
+    // ---- 1. _notifyEventListeners: encode outgoing messages ----
+    var origNotify = CB._notifyEventListeners;
+    CB._notifyEventListeners = function (evt, data) {
+      if (!S.on) return origNotify.call(this, evt, data);
 
-      var input = this.chatInput;
-      var val = input.val();
-
-      log("send: disabled=" + input.prop("disabled") +
-        " len=" + (val ? val.length : 0) +
-        " \"" + (val || "").substring(0, 30) + "\"");
-
-      if (!val || !hasNonAscii(val)) {
-        return origSendChat.apply(this, arguments);
-      }
-
-      var parsed = this._parseChat();
-      if (!parsed || !hasNonAscii(parsed)) {
-        return origSendChat.apply(this, arguments);
-      }
-
-      // 编码
-      var encoded = encodeNonAscii(parsed);
-      var fullMsg = settings.signatureEnabled ? encoded + SIGNATURE : encoded;
-      log("encoded: \"" + parsed + "\" → " + fullMsg.length + " chars");
-
-      // === 本地回显：立即在聊天框显示，不等待服务器回执 ===
-      try {
-        var localPlayerIds = Users.getAllPlayerIds();
-        if (localPlayerIds.length > 0) {
-          CB.addChatMessage(localPlayerIds, parsed, 0);
-          addRecentSend(parsed);
-          log("local echo: \"" + parsed + "\"");
+      if (evt === CB.EVENTS.CHAT || evt === CB.EVENTS.GLOBAL_CHAT) {
+        if (typeof data === "string" && hasNonAscii(data)) {
+          var enc = encode(data);
+          if (S.sig) enc += SIGNATURE;
+          log("enc[" + evt + "]: \"" + data + "\" → " + enc.length + "c");
+          data = enc; incStat("sent");
         }
-      } catch (e) {
-        warn("local echo failed: " + e.message);
+      } else if (evt === CB.EVENTS.USER_CHAT) {
+        if (data && typeof data.message === "string" && hasNonAscii(data.message)) {
+          var enc = encode(data.message);
+          if (S.sig) enc += SIGNATURE;
+          log("enc[user]: → " + enc.length + "c");
+          data = { recipientPlayerIds: data.recipientPlayerIds, message: enc };
+          incStat("sent");
+        }
       }
+      return origNotify.call(this, evt, data);
+    };
+    log("hooked _notifyEventListeners");
 
-      // 发送
-      this._sendChat(fullMsg);
-      incStat("sent");
+    // ---- 2. _sendChat: local echo + timeout ----
+    var origSend = CB._sendChat;
+    CB._sendChat = function (msg) {
+      // 调用原始 _sendChat
+      var result = origSend.call(this, msg);
+
+      if (!S.on) return result;
+
+      // 本地回显：把原文立即显示在聊天列表
+      if (msg && hasNonAscii(msg)) {
+        try {
+          var U = window.TankTrouble ? window.Users || TankTrouble.Users : window.Users;
+          if (U && U.getAllPlayerIds) {
+            var ids = U.getAllPlayerIds();
+            if (ids && ids.length > 0) {
+              CB.addChatMessage(ids, msg, 0);
+              addRecent(msg);
+              log("echo: \"" + msg + "\"");
+            }
+          }
+        } catch (e) { warn("echo: " + e.message); }
+      }
 
       // 超时恢复
-      if (settings.autoRecover) {
+      if (S.recover) {
         var self = this;
-        var tid = setTimeout(function () {
+        this.__ttTimeout = setTimeout(function () {
           if (self.chat && self.chat.hasClass("send")) {
-            warn("no receipt, force recovery");
+            warn("timeout recovery");
             try {
               self.chat.removeClass("send");
               if (self._updateInputBackground) self._updateInputBackground(true);
@@ -222,79 +164,59 @@
             } catch (e) {}
           }
         }, SEND_TIMEOUT);
-        this.__sendTimeout = tid;
       }
+
+      return result;
+    };
+    log("hooked _sendChat (echo + timeout)");
+
+    // ---- 3. Receipt: clear timeout ----
+    var origReceipt = CB._handleChatSendReceipt;
+    CB._handleChatSendReceipt = function (r) {
+      if (r && r !== "" && this.__ttTimeout) {
+        clearTimeout(this.__ttTimeout);
+        this.__ttTimeout = null;
+        log("receipt: " + r);
+      }
+      return origReceipt.call(this, r);
     };
 
-    // ========================================================
-    // 2. Receipt handler / 回执处理
-    // ========================================================
-    var origHandleReceipt = CB._handleChatSendReceipt;
-    CB._handleChatSendReceipt = function (receipt) {
-      if (receipt && receipt !== "" && this.__sendTimeout) {
-        clearTimeout(this.__sendTimeout);
-        this.__sendTimeout = null;
-        log("receipt: " + receipt);
-      }
-      return origHandleReceipt.call(this, receipt);
-    };
-
-    // ========================================================
-    // 3. Receive decoder / 接收解码（带去重）
-    // ========================================================
-    function makeDecoder(origFn, msgIdx, label) {
+    // ---- 4. Receive decode ----
+    function mkDec(orig, idx, label) {
       return function () {
-        var msg = arguments[msgIdx];
-        if (typeof msg === "string" && msg.indexOf("~") !== -1) {
-          var decoded = decodeUnicodeEscapes(msg);
-          decoded = stripSignature(decoded);
-
-          // 去重：跳过本地回显已渲染的消息 / skip locally echoed
-          if (isRecentSend(decoded)) {
-            log("dedup[" + label + "]: skipped echo");
-            return;  // 不渲染重复消息
-          }
-
-          if (decoded !== msg) {
-            log("recv[" + label + "]: \"" + decoded.substring(0, 30) + "\"");
-            arguments[msgIdx] = decoded;
-            incStat("recv");
+        var m = arguments[idx];
+        if (typeof m === "string" && m.indexOf("~") !== -1) {
+          var d = decode(m);
+          d = stripSig(d);
+          if (isRecent(d)) { log("dedup[" + label + "]"); return; }
+          if (d !== m) {
+            log("recv[" + label + "]: \"" + d.substring(0, 30) + "\"");
+            arguments[idx] = d; incStat("recv");
           }
         }
-        return origFn.apply(this, arguments);
+        return orig.apply(this, arguments);
       };
     }
+    CB.addChatMessage       = mkDec(CB.addChatMessage,       1, "pub");
+    CB.addGlobalChatMessage = mkDec(CB.addGlobalChatMessage, 1, "glo");
+    CB.addUserChatMessage   = mkDec(CB.addUserChatMessage,   2, "usr");
 
-    CB.addChatMessage       = makeDecoder(CB.addChatMessage,       1, "public");
-    CB.addGlobalChatMessage = makeDecoder(CB.addGlobalChatMessage, 1, "global");
-    CB.addUserChatMessage   = makeDecoder(CB.addUserChatMessage,   2, "private");
-
-    // 系统消息
     var origSys = CB.addSystemMessage;
-    CB.addSystemMessage = function (playerIds, msg, unignorable) {
-      if (typeof msg === "string") {
-        if (/fail|error|send|chat|banned/i.test(msg)) {
-          warn("system: \"" + msg + "\"");
-        }
-        msg = decodeUnicodeEscapes(msg);
+    CB.addSystemMessage = function (p, m, u) {
+      if (typeof m === "string") {
+        if (/fail|error|send|chat|banned/i.test(m)) warn("sys: \"" + m + "\"");
+        m = decode(m);
       }
-      return origSys.call(this, playerIds, msg, unignorable);
+      return origSys.call(this, p, m, u);
     };
 
     log("=== Ready ===");
-    log("local-echo | dedup | sig:" + settings.signatureEnabled);
     return true;
   }
 
   // ============================================================
-  // Startup / 启动
+  // Start
   // ============================================================
-  var retries = 0;
-  function init() {
-    retries++;
-    if (hookChatBox()) return;
-    if (retries < 30) setTimeout(init, 200);
-    else warn("ChatBox not found. Enter a game room and reload.");
-  }
-  init();
+  var n = 0;
+  (function go() { n++; if (hook()) return; if (n < 30) setTimeout(go, 200); else warn("ChatBox not found. Enter a game room and reload."); })();
 })();
