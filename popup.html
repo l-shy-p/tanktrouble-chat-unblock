@@ -3,182 +3,75 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TankTrouble Chat Unblock</title>
+  <title>TT Chat Unblock</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      width: 300px;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: #1a1a2e;
-      color: #e0e0e0;
-      font-size: 13px;
-    }
-    .header {
-      background: linear-gradient(135deg, #16213e, #0f3460);
-      padding: 16px;
-      text-align: center;
-      border-bottom: 1px solid #333;
-    }
-    .header h1 {
-      font-size: 16px;
-      color: #4f8;
-      margin-bottom: 4px;
-    }
-    .header .ver {
-      font-size: 11px;
-      color: #888;
-    }
-    .status-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      margin-top: 8px;
-    }
-    .status-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: #4f8;
-      box-shadow: 0 0 6px #4f8;
-    }
-    .status-dot.off { background: #f44; box-shadow: 0 0 6px #f44; }
-    .content { padding: 12px 16px; }
-    .setting {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid #2a2a3e;
-    }
-    .setting:last-child { border-bottom: none; }
-    .setting-label {
-      display: flex;
-      flex-direction: column;
-    }
-    .setting-label .title { font-weight: 600; }
-    .setting-label .desc { font-size: 10px; color: #888; margin-top: 2px; }
-    .toggle {
-      position: relative;
-      width: 44px; height: 24px;
-      flex-shrink: 0;
-    }
+    body { width: 300px; font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; font-size: 13px; }
+    .header { background: linear-gradient(135deg, #16213e, #0f3460); padding: 14px 16px; text-align: center; border-bottom: 1px solid #333; }
+    .header h1 { font-size: 15px; color: #4f8; }
+    .header .ver { font-size: 10px; color: #888; margin-top: 2px; }
+    .dot-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #4f8; box-shadow: 0 0 6px #4f8; }
+    .dot.off { background: #f44; box-shadow: 0 0 6px #f44; }
+    .content { padding: 10px 16px; }
+
+    .setting { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #2a2a3e; }
+    .setting-label { display: flex; flex-direction: column; }
+    .setting-label .t { font-weight: 600; }
+    .setting-label .d { font-size: 10px; color: #888; margin-top: 1px; }
+
+    .toggle { position: relative; width: 42px; height: 22px; flex-shrink: 0; }
     .toggle input { opacity: 0; width: 0; height: 0; }
-    .toggle .slider {
-      position: absolute; cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: #444;
-      border-radius: 24px;
-      transition: 0.25s;
-    }
-    .toggle .slider::before {
-      content: "";
-      position: absolute;
-      width: 18px; height: 18px;
-      left: 3px; bottom: 3px;
-      background: white;
-      border-radius: 50%;
-      transition: 0.25s;
-    }
-    .toggle input:checked + .slider { background: #4f8; }
-    .toggle input:checked + .slider::before { transform: translateX(20px); }
+    .toggle .s { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #444; border-radius: 22px; transition: 0.2s; }
+    .toggle .s::before { content: ""; position: absolute; width: 16px; height: 16px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.2s; }
+    .toggle input:checked + .s { background: #4f8; }
+    .toggle input:checked + .s::before { transform: translateX(20px); }
 
-    .lang-select {
-      width: 100%;
-      padding: 6px 8px;
-      margin: 8px 0;
-      background: #2a2a3e;
-      color: #e0e0e0;
-      border: 1px solid #444;
-      border-radius: 4px;
-      font-size: 12px;
-      cursor: pointer;
-    }
-    .lang-select option { background: #1a1a2e; }
+    .lang-select { width: 100%; padding: 5px 8px; margin: 6px 0; background: #2a2a3e; color: #e0e0e0; border: 1px solid #444; border-radius: 4px; font-size: 12px; }
 
-    .footer {
-      padding: 10px 16px;
-      text-align: center;
-      border-top: 1px solid #333;
-      font-size: 10px;
-      color: #666;
-    }
-    .footer a { color: #4f8; text-decoration: none; }
-    .footer a:hover { text-decoration: underline; }
-
-    .stats {
-      display: flex;
-      justify-content: space-around;
-      padding: 8px 0;
-      font-size: 11px;
-      color: #aaa;
-    }
-    .stats span { color: #4f8; font-weight: bold; }
-
-    .copy-row {
-      display: flex; gap: 6px; margin: 10px 0 4px;
-    }
-    .copy-row input {
-      flex: 1; padding: 5px 8px; font-size: 10px;
-      background: #2a2a3e; color: #aaa; border: 1px solid #444;
-      border-radius: 4px; user-select: all;
-    }
-    .copy-row button {
-      padding: 5px 10px; font-size: 11px; white-space: nowrap;
-      background: #0f3460; color: #4f8; border: 1px solid #4f8;
-      border-radius: 4px; cursor: pointer; transition: 0.15s;
-    }
+    .copy-row { display: flex; gap: 6px; margin: 8px 0 4px; }
+    .copy-row input { flex: 1; padding: 5px 8px; font-size: 10px; background: #2a2a3e; color: #aaa; border: 1px solid #444; border-radius: 4px; user-select: all; }
+    .copy-row button { padding: 5px 10px; font-size: 11px; white-space: nowrap; background: #0f3460; color: #4f8; border: 1px solid #4f8; border-radius: 4px; cursor: pointer; transition: 0.15s; }
     .copy-row button:hover { background: #4f8; color: #1a1a2e; }
-    .copy-row button.done { background: #4f8; color: #1a1a2e; }
+
+    .btn-row { margin: 8px 0; }
+    .btn-row button { width: 100%; padding: 7px; font-size: 12px; background: #0f3460; color: #f80; border: 1px solid #f80; border-radius: 4px; cursor: pointer; transition: 0.15s; }
+    .btn-row button:hover { background: #f80; color: #1a1a2e; }
+
+    .footer { padding: 8px 16px; text-align: center; border-top: 1px solid #333; font-size: 10px; color: #666; }
+    .footer a { color: #4f8; text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="header">
     <h1>🛡 TT Chat Unblock</h1>
-    <div class="ver" id="langVer">v1.1 — Multi-language chat unlocker</div>
-    <div class="status-row">
-      <div class="status-dot" id="statusDot"></div>
-      <span id="langStatus">Active</span>
+    <div class="ver">v1.2 — First stable release</div>
+    <div class="dot-row">
+      <div class="dot" id="dot"></div>
+      <span id="sText">Active</span>
     </div>
   </div>
 
   <div class="content">
+    <!-- 开关 -->
     <div class="setting">
       <div class="setting-label">
-        <span class="title" id="langEnable">Enable Extension</span>
-        <span class="desc" id="langEnableDesc">Turn on/off chat encoding</span>
+        <span class="t" id="lblOn">Enable Extension</span>
+        <span class="d" id="dOn">Turn on/off message encoding</span>
       </div>
-      <label class="toggle">
-        <input type="checkbox" id="toggleEnabled" checked>
-        <span class="slider"></span>
-      </label>
+      <label class="toggle"><input type="checkbox" id="tglOn"><span class="s"></span></label>
     </div>
 
     <div class="setting">
       <div class="setting-label">
-        <span class="title" id="langSignature">Signature</span>
-        <span class="desc" id="langSignatureDesc">Append extension link for non-users</span>
+        <span class="t" id="lblSig">Signature</span>
+        <span class="d" id="dSig">Append [Chat Unblocker] tag for non-users</span>
       </div>
-      <label class="toggle">
-        <input type="checkbox" id="toggleSignature" checked>
-        <span class="slider"></span>
-      </label>
+      <label class="toggle"><input type="checkbox" id="tglSig"><span class="s"></span></label>
     </div>
 
-    <div class="setting">
-      <div class="setting-label">
-        <span class="title" id="langRecover">Auto-Recovery</span>
-        <span class="desc" id="langRecoverDesc">Force reset UI on send timeout</span>
-      </div>
-      <label class="toggle">
-        <input type="checkbox" id="toggleRecover" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <label class="setting-label" style="margin-top:8px;">
-      <span class="title" id="langSelectLabel">Language / 语言</span>
-    </label>
-    <select class="lang-select" id="langSelector">
+    <!-- 语言选择 -->
+    <select class="lang-select" id="langSel">
       <option value="en">English</option>
       <option value="zh">中文 (Chinese)</option>
       <option value="ja">日本語 (Japanese)</option>
@@ -191,22 +84,20 @@
       <option value="pt">Português (Portuguese)</option>
     </select>
 
+    <!-- 各语言对应链接 + 复制 -->
     <div class="copy-row">
-      <input type="text" id="linkInput" readonly
-             value="https://github.com/L-Shy-P/TankTrouble-Chat-Unblock">
+      <input type="text" id="linkInput" readonly>
       <button id="copyBtn">Copy</button>
     </div>
 
-    <div class="stats" id="statsRow" style="display:none;">
-      <div>📤 <span id="statSent">0</span></div>
-      <div>📥 <span id="statRecv">0</span></div>
+    <!-- 重置按钮 -->
+    <div class="btn-row">
+      <button id="resetBtn">Reset Chat Input & Copy</button>
     </div>
   </div>
 
   <div class="footer">
-    <a href="https://github.com/L-Shy-P/TankTrouble-Chat-Unblock" target="_blank">
-      github.com/L-Shy-P/TankTrouble-Chat-Unblock
-    </a>
+    <span id="footerText">Made by L_Shy_P</span>
   </div>
 
   <script src="popup.js"></script>
