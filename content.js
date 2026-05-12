@@ -1,5 +1,20 @@
+// TT Chat Unblock — v1.2 (commit c718734 + log + sig + dedup)
 (function () {
   "use strict";
+
+  // 签名（面板可关）
+  var SIGNATURE = " [TT Unblock]";
+  var settings = { sig: true, on: true };
+  try {
+    chrome.storage.local.get(["signatureEnabled", "enabled"], function (d) {
+      if (d.signatureEnabled !== undefined) settings.sig = d.signatureEnabled;
+      if (d.enabled !== undefined) settings.on = d.enabled;
+    });
+    chrome.storage.onChanged.addListener(function (c) {
+      if (c.signatureEnabled) settings.sig = c.signatureEnabled.newValue;
+      if (c.enabled) settings.on = c.enabled.newValue;
+    });
+  } catch (e) {}
 
   function hasNonAscii(s) {
     if (!s) return false;
@@ -9,7 +24,6 @@
     return false;
   }
 
-  // 非 ASCII → \uXXXX / \uXXXX → 原字符
   function encode(s) {
     var r = "";
     for (var i = 0; i < s.length; i++) {
@@ -36,37 +50,51 @@
     var TT = window.TankTrouble;
     if (!TT || !TT.ChatBox) return false;
     var CB = TT.ChatBox;
+    console.log("[TT] hooked — ChatBox ready");
 
-    // ---- 发送：绕过原始 sendChat，直接编码后发送 ----
+    // ---- 发送 ----
     var origSendChat = CB.sendChat;
     CB.sendChat = function () {
+      if (!settings.on) return origSendChat.apply(this, arguments);
+
       var val = this.chatInput.val();
       if (!val || !hasNonAscii(val)) {
         return origSendChat.apply(this, arguments);
       }
 
+      // 防重复：等待服务器回执时忽略重复回车
+      if (this.chat.hasClass("send")) {
+        console.log("[TT] send blocked: already sending");
+        return;
+      }
+
       var parsed = this._parseChat();
+      console.log("[TT] send: \"" + parsed + "\" (" + parsed.length + " chars)");
       if (!parsed || !hasNonAscii(parsed)) {
         return origSendChat.apply(this, arguments);
       }
 
       var encoded = encode(parsed);
+      if (settings.sig) encoded += SIGNATURE;
+      console.log("[TT] encoded: " + encoded.length + " chars → sending");
       this._sendChat(encoded);
     };
 
-    // ---- 接收：解码 ----
-    function mkDec(orig, idx) {
+    // ---- 接收 ----
+    function mkDec(orig, idx, label) {
       return function () {
         var m = arguments[idx];
         if (typeof m === "string" && m.indexOf("\\u") !== -1) {
-          arguments[idx] = decode(m);
+          var d = decode(m);
+          console.log("[TT] recv[" + label + "]: \"" + d + "\"");
+          arguments[idx] = d;
         }
         return orig.apply(this, arguments);
       };
     }
-    CB.addChatMessage       = mkDec(CB.addChatMessage,       1);
-    CB.addGlobalChatMessage = mkDec(CB.addGlobalChatMessage, 1);
-    CB.addUserChatMessage   = mkDec(CB.addUserChatMessage,   2);
+    CB.addChatMessage       = mkDec(CB.addChatMessage,       1, "pub");
+    CB.addGlobalChatMessage = mkDec(CB.addGlobalChatMessage, 1, "glo");
+    CB.addUserChatMessage   = mkDec(CB.addUserChatMessage,   2, "prv");
 
     var origSys = CB.addSystemMessage;
     CB.addSystemMessage = function (p, m, u) {
