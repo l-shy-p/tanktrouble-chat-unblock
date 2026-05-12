@@ -113,6 +113,22 @@
       color: #aaa;
     }
     .stats span { color: #4f8; font-weight: bold; }
+
+    .copy-row {
+      display: flex; gap: 6px; margin: 10px 0 4px;
+    }
+    .copy-row input {
+      flex: 1; padding: 5px 8px; font-size: 10px;
+      background: #2a2a3e; color: #aaa; border: 1px solid #444;
+      border-radius: 4px; user-select: all;
+    }
+    .copy-row button {
+      padding: 5px 10px; font-size: 11px; white-space: nowrap;
+      background: #0f3460; color: #4f8; border: 1px solid #4f8;
+      border-radius: 4px; cursor: pointer; transition: 0.15s;
+    }
+    .copy-row button:hover { background: #4f8; color: #1a1a2e; }
+    .copy-row button.done { background: #4f8; color: #1a1a2e; }
   </style>
 </head>
 <body>
@@ -174,6 +190,12 @@
       <option value="de">Deutsch (German)</option>
       <option value="pt">Português (Portuguese)</option>
     </select>
+
+    <div class="copy-row">
+      <input type="text" id="linkInput" readonly
+             value="https://github.com/L-Shy-P/TankTrouble-Chat-Unblock">
+      <button id="copyBtn">Copy</button>
+    </div>
 
     <div class="stats" id="statsRow" style="display:none;">
       <div>📤 <span id="statSent">0</span></div>

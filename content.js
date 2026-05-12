@@ -3,7 +3,7 @@
   "use strict";
 
   // 签名（面板可关）
-  var SIGNATURE = " [TT Unblock]";
+  var SIGNATURE = " [Chat Unblocker]";
   var settings = { sig: true, on: true };
   try {
     chrome.storage.local.get(["signatureEnabled", "enabled"], function (d) {
@@ -81,11 +81,19 @@
     };
 
     // ---- 接收 ----
+    // 接收解码 + 剥离签名（扩展用户不需要看到签名）
+    function stripSig(s) {
+      if (!s) return s;
+      var p = s.lastIndexOf(SIGNATURE);
+      return p >= 0 ? s.substring(0, p) : s;
+    }
+
     function mkDec(orig, idx, label) {
       return function () {
         var m = arguments[idx];
         if (typeof m === "string" && m.indexOf("\\u") !== -1) {
           var d = decode(m);
+          d = stripSig(d);
           console.log("[TT] recv[" + label + "]: \"" + d + "\"");
           arguments[idx] = d;
         }

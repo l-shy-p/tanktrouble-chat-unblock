@@ -39,6 +39,7 @@ function localize(lang) {
   } else {
     statusText.textContent = t("langStatusActive", lang);
   }
+  updateCopyBtn(lang);
 }
 
 // ---- DOM refs / DOM 引用 ----
@@ -139,3 +140,52 @@ function loadStats() {
     });
   } catch (e) {}
 }
+
+// ---- Copy link / 一键复制 ----
+var copyLabels = {
+  en:["Copy","Copied!"], zh:["复制","已复制！"], ja:["コピー","コピー完了！"],
+  ko:["복사","복사됨!"], ru:["Копировать","Скопировано!"], ar:["نسخ","تم النسخ!"],
+  fr:["Copier","Copié !"], es:["Copiar","¡Copiado!"], de:["Kopieren","Kopiert!"],
+  pt:["Copiar","Copiado!"]
+};
+var GITHUB_URL = "https://github.com/L-Shy-P/TankTrouble-Chat-Unblock";
+var copyBtn = document.getElementById("copyBtn");
+var linkInput = document.getElementById("linkInput");
+
+function updateCopyBtn(lang) {
+  var labels = copyLabels[lang] || copyLabels["en"];
+  copyBtn.textContent = labels[0];
+  copyBtn.dataset.copy = labels[0];
+  copyBtn.dataset.done = labels[1];
+}
+
+copyBtn.addEventListener("click", function () {
+  linkInput.select();
+  try {
+    navigator.clipboard.writeText(GITHUB_URL).then(function () {
+      copyBtn.textContent = copyBtn.dataset.done;
+      copyBtn.classList.add("done");
+      setTimeout(function () {
+        copyBtn.textContent = copyBtn.dataset.copy;
+        copyBtn.classList.remove("done");
+      }, 1500);
+    });
+  } catch (e) {
+    document.execCommand("copy");
+    copyBtn.textContent = copyBtn.dataset.done;
+    copyBtn.classList.add("done");
+    setTimeout(function () {
+      copyBtn.textContent = copyBtn.dataset.copy;
+      copyBtn.classList.remove("done");
+    }, 1500);
+  }
+});
+
+// Update copy button label on lang change
+var origLangChange = langSelector.onchange;
+langSelector.addEventListener("change", function () {
+  updateCopyBtn(langSelector.value);
+});
+
+// Init copy button
+updateCopyBtn("en");
