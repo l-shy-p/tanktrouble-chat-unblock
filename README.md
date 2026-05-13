@@ -217,17 +217,59 @@ O chat do TankTrouble.com bloqueia caracteres não-ASCII. Esta extensão codific
 
 MIT © 2026 L_Shy_P
 
-## How to Update / 更新方法
+## Changelog / 更新日志
 
-**English:** Copy the raw code of `content.js` from [GitHub](https://github.com/L-Shy-P/TankTrouble-Chat-Unblock/blob/master/content.js) → replace the `content.js` in your extension folder → go to `chrome://extensions/` → click refresh icon on the extension card.
+### v2.1 — 2026-05-13
 
-**中文：** 从 [GitHub](https://github.com/L-Shy-P/TankTrouble-Chat-Unblock/blob/master/content.js) 复制 `content.js` 的原始代码 → 替换扩展文件夹中的 `content.js` → 打开 `chrome://extensions/` → 点击扩展卡片上的刷新图标。
+**Major / 重要更新：**
+- 🇬🇧 Changed encoding prefix from `\u` to `~` to bypass profanity filter that corrupted certain character combinations
+- 🇨🇳 编码前缀由 `\u` 改为 `~`，修复部分字符组合触发敏感词过滤器导致乱码的问题
+- 🇯🇵 エンコード prefix を `\u` から `~` に変更、文字化けを修正
+- 🇰🇷 인코딩 prefix를 `\u`에서 `~`로 변경, 일부 문자 조합 깨짐 현상 수정
+- 🇷🇺 Префикс кодирования изменён с `\u` на `~`, исправлен баг с фильтром
+- 🇸🇦 تم تغيير prefix الترميز من `\u` إلى `~` لإصلاح مشكلة تشويه بعض تركيبات الأحرف
+- 🇫🇷 Préfixe d'encodage changé de `\u` à `~` pour contourner le filtre
+- 🇪🇸 Prefijo de codificación cambiado de `\u` a `~` para evitar el filtro
+- 🇩🇪 Kodierungspräfix von `\u` auf `~` geändert
+- 🇵🇹 Prefixo de codificação alterado de `\u` para `~`
 
-**日本語：** [GitHub](https://github.com/L-Shy-P/TankTrouble-Chat-Unblock/blob/master/content.js) から `content.js` の Raw コードをコピー → 拡張機能フォルダの `content.js` を置換 → `chrome://extensions/` → 更新アイコンをクリック。
+**Minor / 小更新：**
+- 🇬🇧 Toggle now swaps message display instantly (no page reload) + popup no longer flashes on open + version checker added to header + "Stable" label i18n
+- 🇨🇳 编码开关即时切换消息显示（不再刷新网页）+ 弹窗打开无闪烁 + 标题栏版本检测 + "稳定版"多语言化
+- 🇯🇵 エンコード切替で即時表示更新 + ポップアップ表示の改善 + バージョン検出機能 + 「安定版」多言語化
+- 🇰🇷 인코딩 토글 즉시 전환 + 팝업 깜빡임 수정 + 버전 확인 추가 + "안정판" 다국어화
+- 🇷🇺 Мгновенное переключение отображения + исправлено мерцание + проверка версий + "Стабильная" на 10 языках
+- 🇸🇦 تبديل فوري لعرض الرسائل + إصلاح وميض النافذة + فحص الإصدارات + "مستقر" متعدد اللغات
+- 🇫🇷 Basculement instantané + correction du scintillement + vérification de version + "Stable" i18n
+- 🇪🇸 Cambio instantáneo + arreglo de parpadeo + verificación de versión + "Estable" i18n
+- 🇩🇪 Sofortige Umschaltung + Flackern behoben + Versionsprüfung + "Stabil" i18n
+- 🇵🇹 Troca instantânea + correção de flicker + verificação de versão + "Estável" i18n
 
-**한국어：** [GitHub](https://github.com/L-Shy-P/TankTrouble-Chat-Unblock/blob/master/content.js)에서 `content.js` Raw 코드 복사 → 확장 폴더의 `content.js` 교체 → `chrome://extensions/` → 새로고침 아이콘 클릭.
+---
 
-> **Note:** Usually only `content.js` changes. If the update notes mention other files, replace those too.
+## How to Update / 更新方法（无需下载）
+
+**English：** Open [`content.js`](https://raw.githubusercontent.com/L-Shy-P/TankTrouble-Chat-Unblock/master/content.js) → Ctrl+A → Ctrl+C → paste into your local `content.js` file → go to `chrome://extensions/` → click ↻ on the extension card.
+
+**中文：** 打开 [`content.js`](https://raw.githubusercontent.com/L-Shy-P/TankTrouble-Chat-Unblock/master/content.js) → 全选复制 → 粘贴替换本地 `content.js` → 打开 `chrome://extensions/` → 点扩展卡片上的 ↻。
+
+**日本語：** [`content.js`](https://raw.githubusercontent.com/L-Shy-P/TankTrouble-Chat-Unblock/master/content.js) を開く → 全選択コピー → ローカルの `content.js` に上書き → `chrome://extensions/` → ↻ クリック。
+
+**한국어：** [`content.js`](https://raw.githubusercontent.com/L-Shy-P/TankTrouble-Chat-Unblock/master/content.js) 열기 → 전체 복사 → 로컬 `content.js`에 붙여넣기 → `chrome://extensions/` → ↻ 클릭.
+
+**Русский：** Откройте [`content.js`](https://raw.githubusercontent.com/L-Shy-P/TankTrouble-Chat-Unblock/master/content.js) → Ctrl+A → Ctrl+C → вставьте в локальный `content.js` → `chrome://extensions/` → нажмите ↻.
+
+**العربية：** افتح [`content.js`](https://raw.githubusercontent.com/L-Shy-P/TankTrouble-Chat-Unblock/master/content.js) → نسخ الكل → لصق في الملف المحلي `content.js` → `chrome://extensions/` → اضغط ↻.
+
+**Français：** Ouvrez [`content.js`](https://raw.githubusercontent.com/L-Shy-P/TankTrouble-Chat-Unblock/master/content.js) → Ctrl+A → Ctrl+C → collez dans votre `content.js` local → `chrome://extensions/` → cliquez ↻.
+
+**Español：** Abra [`content.js`](https://raw.githubusercontent.com/L-Shy-P/TankTrouble-Chat-Unblock/master/content.js) → Ctrl+A → Ctrl+C → pegue en su `content.js` local → `chrome://extensions/` → haga clic en ↻.
+
+**Deutsch：** Öffnen Sie [`content.js`](https://raw.githubusercontent.com/L-Shy-P/TankTrouble-Chat-Unblock/master/content.js) → Ctrl+A → Ctrl+C → in lokale `content.js` einfügen → `chrome://extensions/` → ↻ klicken.
+
+**Português：** Abra [`content.js`](https://raw.githubusercontent.com/L-Shy-P/TankTrouble-Chat-Unblock/master/content.js) → Ctrl+A → Ctrl+C → cole no seu `content.js` local → `chrome://extensions/` → clique em ↻.
+
+> 💡 **Tip:** Usually only `content.js` changes. If the changelog mentions `bridge.js` or `popup.js`, update those too the same way.
 
 ## Links
 
