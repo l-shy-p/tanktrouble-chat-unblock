@@ -22,6 +22,12 @@ var T = {
   copy:  { en:"Copy", zh:"复制", ja:"コピー", ko:"복사", ru:"Копировать", ar:"نسخ", fr:"Copier", es:"Copiar", de:"Kopieren", pt:"Copiar" },
   done:  { en:"Copied!", zh:"已复制！", ja:"コピー完了！", ko:"복사됨!", ru:"Скопировано!", ar:"تم النسخ!", fr:"Copié !", es:"¡Copiado!", de:"Kopiert!", pt:"Copiado!" },
   by:    { en:"Made by L_Shy_P", zh:"L_Shy_P 制作", ja:"L_Shy_P 制作", ko:"L_Shy_P 제작", ru:"Создано L_Shy_P", ar:"صنع بواسطة L_Shy_P", fr:"Créé par L_Shy_P", es:"Hecho por L_Shy_P", de:"Von L_Shy_P", pt:"Feito por L_Shy_P" },
+  verChk:{ en:"Checking for updates...", zh:"正在检查更新...", ja:"更新を確認中...", ko:"업데이트 확인 중...", ru:"Проверка обновлений...", ar:"جارٍ التحقق من التحديثات...", fr:"Vérification des mises à jour...", es:"Comprobando actualizaciones...", de:"Suche nach Updates...", pt:"Verificando atualizações..." },
+  verOK: { en:"Up to date (v{0})", zh:"已是最新 (v{0})", ja:"最新です (v{0})", ko:"최신 버전 (v{0})", ru:"Актуально (v{0})", ar:"محدث (v{0})", fr:"À jour (v{0})", es:"Actualizado (v{0})", de:"Aktuell (v{0})", pt:"Atualizado (v{0})" },
+  verMaj:{ en:"v{0} available — major update!", zh:"v{0} 可用 — 大版本更新！", ja:"v{0} 利用可能 — メジャーアップデート！", ko:"v{0} 사용 가능 — 주요 업데이트!", ru:"v{0} доступно — крупное обновление!", ar:"v{0} متاح — تحديث رئيسي!", fr:"v{0} disponible — mise à jour majeure !", es:"v{0} disponible — ¡actualización mayor!", de:"v{0} verfügbar — großes Update!", pt:"v{0} disponível — grande atualização!" },
+  verMin:{ en:"v{0} available — minor update", zh:"v{0} 可用 — 小版本更新", ja:"v{0} 利用可能 — マイナーアップデート", ko:"v{0} 사용 가능 — 사소한 업데이트", ru:"v{0} доступно — небольшое обновление", ar:"v{0} متاح — تحديث ثانوي", fr:"v{0} disponible — mise à jour mineure", es:"v{0} disponible — actualización menor", de:"v{0} verfügbar — kleines Update", pt:"v{0} disponível — pequena atualização" },
+  verErr:{ en:"Unable to check for updates", zh:"无法检查更新", ja:"更新を確認できません", ko:"업데이트를 확인할 수 없습니다", ru:"Не удалось проверить обновления", ar:"تعذر التحقق من التحديثات", fr:"Impossible de vérifier les mises à jour", es:"No se pudo verificar actualizaciones", de:"Update-Prüfung fehlgeschlagen", pt:"Não foi possível verificar atualizações" },
+  stable:{ en:"Stable", zh:"稳定版", ja:"安定版", ko:"안정판", ru:"Стабильная", ar:"مستقر", fr:"Stable", es:"Estable", de:"Stabil", pt:"Estável" },
 };
 
 function t(key, lang) { var e = T[key]; return e ? (e[lang] || e["en"]) : key; }
@@ -35,7 +41,6 @@ var langSel = document.getElementById("langSel");
 var linkInp = document.getElementById("linkInput");
 var copyBtn = document.getElementById("copyBtn");
 var resetBtn= document.getElementById("resetBtn");
-var content = document.querySelector(".content");
 
 // ---- 当前语言 ----
 var lang = "en";
@@ -52,6 +57,8 @@ function localize(l) {
   copyBtn.textContent  = t("copy", l);
   linkInp.value = getURL(l);
   document.getElementById("footerText").textContent = t("by", l);
+  document.getElementById("verLabel").innerHTML = '<span class="ver-dot-inline ' + (verDot ? verDot.className.replace("ver-dot-inline ", "") : "ok") + '" id="verDot"></span> v' + LOCAL_VER + ' — ' + t("stable", l);
+  verDot = document.getElementById("verDot");
   sText.textContent = dot.classList.contains("off") ? t("off", l) : t("active", l);
 }
 
@@ -82,9 +89,11 @@ try {
     lang = d.lang || "en";
     langSel.value = lang;
     localize(lang);
+    checkVersion();
     document.getElementById("mainContent").style.display = "";
   });
 } catch (e) {
+  checkVersion();
   localize("en");
   document.getElementById("mainContent").style.display = "";
 }
@@ -102,6 +111,7 @@ tglSig.addEventListener("change", function () {
 langSel.addEventListener("change", function () {
   save("lang", this.value);
   localize(this.value);
+  checkVersion();
 });
 
 // ---- 复制链接 ----
@@ -123,3 +133,52 @@ copyBtn.addEventListener("click", function () {
 resetBtn.addEventListener("click", function () {
   save("_resetRequest", Date.now());
 });
+
+// ---- 版本检测 ----
+var LOCAL_VER = "2.1";
+var MANIFEST_URL = "https://raw.githubusercontent.com/L-Shy-P/TankTrouble-Chat-Unblock/master/manifest.json";
+var verDot  = document.getElementById("verDot");
+
+var verLabel = document.getElementById("verLabel");
+
+function setVer(cls, msg) {
+  verDot.className = "ver-dot-inline " + (cls || "");
+  verLabel.innerHTML = '<span class="ver-dot-inline ' + (cls || "") + '" id="verDot"></span> ' + msg;
+  // re-grab verDot since innerHTML replaced it
+  verDot = document.getElementById("verDot");
+}
+
+function checkVersion() {
+  setVer("", "v" + LOCAL_VER + " — " + t("stable", lang));
+  try {
+    fetch(MANIFEST_URL + "?t=" + Date.now())
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        var remote = data.version || "";
+        var localParts = LOCAL_VER.split(".");
+        var remoteParts = remote.split(".");
+        var localMajor = parseInt(localParts[0]) || 0;
+        var localMinor = parseInt(localParts[1]) || 0;
+        var remoteMajor = parseInt(remoteParts[0]) || 0;
+        var remoteMinor = parseInt(remoteParts[1]) || 0;
+
+        if (remoteMajor > localMajor) {
+          setVer("major", t("verMaj", lang).replace("{0}", remote));
+        } else if (remoteMajor === localMajor && remoteMinor > localMinor) {
+          setVer("minor", t("verMin", lang).replace("{0}", remote));
+        } else {
+          setVer("ok", t("verOK", lang).replace("{0}", LOCAL_VER));
+        }
+      })
+      .catch(function () {
+        setVer("", t("verErr", lang));
+      });
+  } catch (e) {
+    setVer("", t("verErr", lang));
+  }
+}
+
+

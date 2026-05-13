@@ -38,6 +38,14 @@
     .btn-row button { width: 100%; padding: 7px; font-size: 12px; background: #0f3460; color: #f80; border: 1px solid #f80; border-radius: 4px; cursor: pointer; transition: 0.15s; }
     .btn-row button:hover { background: #f80; color: #1a1a2e; }
 
+    .version-row { display: flex; align-items: center; gap: 6px; padding: 6px 0; margin-top: 4px; }
+    .ver-dot { width: 8px; height: 8px; border-radius: 50%; background: #888; flex-shrink: 0; }
+    .ver-dot-inline.major { background: #f44; }
+    .ver-dot-inline.minor { background: #fc0; }
+    .ver-dot-inline.ok { background: #4f8; }
+    .ver-dot.ok { background: #4f8; box-shadow: 0 0 6px #4f8; }
+    .ver-text { font-size: 11px; color: #aaa; }
+
     .footer { padding: 8px 16px; text-align: center; border-top: 1px solid #333; font-size: 10px; color: #666; }
     .footer a { color: #4f8; text-decoration: none; }
   </style>
@@ -45,7 +53,7 @@
 <body>
   <div class="header">
     <h1>🛡 TT Chat Unblock</h1>
-    <div class="ver">v2.1 — Stable</div>
+    <div class="ver" id="verLabel"><span class="ver-dot-inline ok" id="verDot"></span> v2.1 — Stable</div>
     <div class="dot-row">
       <div class="dot" id="dot"></div>
       <span id="sText">Active</span>
@@ -94,7 +102,8 @@
     <div class="btn-row">
       <button id="resetBtn">Reset Chat Input & Copy</button>
     </div>
-  </div>
+
+    <!-- 版本检测 -->
 
   <div class="footer">
     <span id="footerText">Made by L_Shy_P</span>
