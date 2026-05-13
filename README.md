@@ -217,6 +217,18 @@ O chat do TankTrouble.com bloqueia caracteres não-ASCII. Esta extensão codific
 
 MIT © 2026 L_Shy_P
 
+## How to Update / 更新方法
+
+**English:** Copy the raw code of `content.js` from [GitHub](https://github.com/L-Shy-P/TankTrouble-Chat-Unblock/blob/master/content.js) → replace the `content.js` in your extension folder → go to `chrome://extensions/` → click refresh icon on the extension card.
+
+**中文：** 从 [GitHub](https://github.com/L-Shy-P/TankTrouble-Chat-Unblock/blob/master/content.js) 复制 `content.js` 的原始代码 → 替换扩展文件夹中的 `content.js` → 打开 `chrome://extensions/` → 点击扩展卡片上的刷新图标。
+
+**日本語：** [GitHub](https://github.com/L-Shy-P/TankTrouble-Chat-Unblock/blob/master/content.js) から `content.js` の Raw コードをコピー → 拡張機能フォルダの `content.js` を置換 → `chrome://extensions/` → 更新アイコンをクリック。
+
+**한국어：** [GitHub](https://github.com/L-Shy-P/TankTrouble-Chat-Unblock/blob/master/content.js)에서 `content.js` Raw 코드 복사 → 확장 폴더의 `content.js` 교체 → `chrome://extensions/` → 새로고침 아이콘 클릭.
+
+> **Note:** Usually only `content.js` changes. If the update notes mention other files, replace those too.
+
 ## Links
 
 - 🔗 [GitHub Repository](https://github.com/L-Shy-P/TankTrouble-Chat-Unblock)

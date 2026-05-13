@@ -3,9 +3,8 @@
   "use strict";
 
   var SIGNATURE = " [Chat Unblocker]";
-  var settings = { sig: true, on: true, lang: "en" };
+  var settings = { sig: true, enc: true, lang: "en" };
 
-  // @失败多语言提示
   var MSG_NO_RECIPIENTS = {
     en: "No valid recipients — message not sent",
     zh: "无有效收件人 — 消息未发送",
@@ -23,12 +22,30 @@
   window.addEventListener("message", function (e) {
     if (!e.data || e.data.source !== "tt-bridge") return;
     var d = e.data.data;
-    if (d.type === "init")  { settings.sig = d.sig; settings.on = d.on; settings.lang = d.lang; console.log("[TT] init sig="+settings.sig+" on="+settings.on+" lang="+settings.lang); }
+    if (d.type === "init")  { settings.sig = d.sig; settings.enc = d.enc; settings.lang = d.lang; console.log("[TT] init sig="+settings.sig+" enc="+settings.enc+" lang="+settings.lang); }
     if (d.type === "sig")   { settings.sig = d.value; console.log("[TT] sig→" + settings.sig); }
-    if (d.type === "on")    { settings.on  = d.value; console.log("[TT] on→" + settings.on); }
+    if (d.type === "enc")   { settings.enc = d.value; console.log("[TT] enc→" + settings.enc); toggleMessages(); }
     if (d.type === "lang")  { settings.lang = d.value; console.log("[TT] lang→" + settings.lang); }
     if (d.type === "reset") { doReset(); }
   });
+
+  // ---- 切换消息显示（编码开关 → 交换 CB.messages 后重绘） ----
+  function toggleMessages() {
+    try {
+      var CB = window.TankTrouble && window.TankTrouble.ChatBox;
+      if (!CB || !CB.messages) return;
+      for (var i = 0; i < CB.messages.length; i++) {
+        var msg = CB.messages[i];
+        if (msg._raw) {
+          var tmp = msg.message;
+          msg.message = msg._raw;
+          msg._raw = tmp;
+        }
+      }
+      CB._refreshChat(true);
+      console.log("[TT] messages toggled, enc=" + settings.enc);
+    } catch (e) { console.warn("[TT] toggle err:", e); }
+  }
 
   function doReset() {
     try {
@@ -45,7 +62,7 @@
     } catch (e) {}
   }
 
-  // ---- 编码/解码 ----
+  // ---- 编码/解码（~ 前缀避开敏感词过滤） ----
   function hasNonAscii(s) {
     if (!s) return false;
     for (var i = 0; i < s.length; i++) { if (s.charCodeAt(i) > 127) return true; }
@@ -55,7 +72,7 @@
     var r = "";
     for (var i = 0; i < s.length; i++) {
       var c = s.charCodeAt(i);
-      if (c > 127) r += "\\u" + ("000" + c.toString(16)).slice(-4);
+      if (c > 127) r += "~" + ("000" + c.toString(16)).slice(-4);
       else if (s.charAt(i) === "\\") r += "\\\\";
       else r += s.charAt(i);
     }
@@ -63,7 +80,7 @@
   }
   function decode(s) {
     if (!s) return s;
-    return s.replace(/\\u([0-9a-fA-F]{4})/g, function (_, h) { return String.fromCharCode(parseInt(h, 16)); });
+    return s.replace(/~([0-9a-fA-F]{4})/g, function (_, h) { return String.fromCharCode(parseInt(h, 16)); });
   }
   function stripSig(s) {
     if (!s) return s;
@@ -74,11 +91,10 @@
   // ---- @私聊异步查找 ----
   function resolveRecipients(CB, usernames, callback) {
     var count = 0, total = usernames.length;
-    var notFound = []; // 未找到的用户名
+    var notFound = [];
     for (var i = 0; i < usernames.length; i++) {
       Backend.getInstance().getPlayerDetailsByUsername(
         function (result) {
-          console.log("[TT] lookup:", typeof result, typeof result === "object" ? result.getPlayerId() : result);
           if (typeof result === "object") {
             if (!Users.isAnyUser(result.getPlayerId())) {
               if (CB.recipientPlayerIds.indexOf(result.getPlayerId()) === -1) {
@@ -92,10 +108,7 @@
         function () {},
         function () {
           count++;
-          if (count === total) {
-            console.log("[TT] lookup done: ok=" + (CB.recipientPlayerIds.length > 0) + " recipients=" + CB.recipientPlayerIds.length);
-            callback(CB.recipientPlayerIds.length > 0, notFound);
-          }
+          if (count === total) callback(CB.recipientPlayerIds.length > 0, notFound);
         },
         usernames[i],
         Caches.getPlayerDetailsByUsernameCache()
@@ -103,7 +116,7 @@
     }
   }
 
-  // 聊天消息可选中
+  // 聊天文本可选中
   var style = document.createElement("style");
   style.textContent = ".chatBody, .chatBody * { user-select: text !important; -webkit-user-select: text !important; }";
   document.head.appendChild(style);
@@ -117,91 +130,81 @@
     // ---- 发送 ----
     var origSendChat = CB.sendChat;
     CB.sendChat = function () {
-      if (!settings.on) return origSendChat.apply(this, arguments);
       if (this.chat.hasClass("send")) return;
-
       var val = this.chatInput.val();
       if (!val) return origSendChat.apply(this, arguments);
-
-      // 先解析，获取 @用户名 / #全局 等副作用
       var parsed = this._parseChat();
 
-      // ---- @私聊：不论含不含中文，统一走我们的异步查找 ----
+      // @私聊保护（始终生效，不受编码开关影响）
       if (this.recipientUsernames.length > 0) {
         var self = this;
         var hasNon = hasNonAscii(parsed);
-        // 含中文才编码，纯英文保留原文
-        var text = hasNon ? encode(parsed) : parsed;
-        if (hasNon && settings.sig) text += SIGNATURE;
+        var text = (hasNon && settings.enc) ? encode(parsed) : parsed;
+        if (hasNon && settings.enc && settings.sig) text += SIGNATURE;
         var usernames = this.recipientUsernames.slice();
-        console.log("[TT] @mention: \"" + parsed + "\" → looking up " + usernames.join(","));
 
-        resolveRecipients(CB, usernames, function (ok, notFound) {
+        resolveRecipients(CB, usernames, function (ok) {
           if (ok) {
-            console.log("[TT] @mention ok, sending USER_CHAT");
             self._sendChat(text);
           } else {
-            // 无有效收件人 → 输入框右侧红色气泡（fixed 定位，不挡 UI）
             var lang = settings.lang || "en";
             var msg = MSG_NO_RECIPIENTS[lang] || MSG_NO_RECIPIENTS["en"];
-            console.log("[TT] @mention blocked: " + msg);
             $(".tt-err-bubble").remove();
             var off = self.chatInput.offset();
             var h = self.chatInput.outerHeight();
             var w = self.chatInput.outerWidth();
             var arrow = $("<span>").css({
-              "position": "absolute", "left": "-6px", "top": "50%",
-              "transform": "translateY(-50%)",
-              "width": "0", "height": "0",
-              "border-top": "5px solid transparent",
-              "border-bottom": "5px solid transparent",
-              "border-right": "6px solid #e53935"
+              position:"absolute",left:"-6px",top:"50%",transform:"translateY(-50%)",
+              width:"0",height:"0",borderTop:"5px solid transparent",
+              borderBottom:"5px solid transparent",borderRight:"6px solid #e53935"
             });
             var bubble = $("<span class='tt-err-bubble'>").text(msg).css({
-              "position": "fixed", "z-index": "9999",
-              "left": (off.left + w + 8) + "px",
-              "top": (off.top + h / 2) + "px",
-              "transform": "translateY(-50%)",
-              "color": "#fff", "background": "#e53935",
-              "padding": "4px 10px", "border-radius": "4px",
-              "font-size": "12px", "font-weight": "bold",
-              "white-space": "nowrap",
-              "box-shadow": "0 2px 6px rgba(0,0,0,0.3)"
+              position:"fixed",zIndex:"9999",left:(off.left+w+8)+"px",top:(off.top+h/2)+"px",
+              transform:"translateY(-50%)",color:"#fff",background:"#e53935",
+              padding:"4px 10px",borderRadius:"4px",fontSize:"12px",fontWeight:"bold",
+              whiteSpace:"nowrap",boxShadow:"0 2px 6px rgba(0,0,0,.3)"
             });
-            bubble.append(arrow);
-            bubble.hide();
-            $("body").append(bubble);
-            bubble.fadeIn(150).delay(2000).fadeOut(300, function () { $(this).remove(); });
+            bubble.append(arrow).hide(); $("body").append(bubble);
+            bubble.fadeIn(150).delay(2000).fadeOut(300,function(){$(this).remove();});
           }
         });
         return;
       }
 
-      // ---- 纯 ASCII 无 @ → 走原始流程 ----
+      // 无 @：纯 ASCII 走原始流程；中文且编码开启则编码发送
       if (!hasNonAscii(parsed)) return origSendChat.apply(this, arguments);
-
-      // ---- #全局 / 普通中文消息 ----
-      console.log("[TT] send: \"" + parsed + "\"");
       if (!parsed) return origSendChat.apply(this, arguments);
 
-      var encoded = encode(parsed);
-      if (settings.sig) encoded += SIGNATURE;
-      console.log("[TT] encoded: " + encoded.length + " chars");
-      this._sendChat(encoded);
+      var textToSend;
+      if (settings.enc) {
+        textToSend = encode(parsed);
+        if (settings.sig) textToSend += SIGNATURE;
+      } else {
+        textToSend = parsed;
+      }
+      this._sendChat(textToSend);
     };
 
-    // ---- 接收（尊重 settings.on 开关） ----
+    // ---- 接收 ----
     function mkDec(orig, idx, label) {
       return function () {
-        if (!settings.on) return orig.apply(this, arguments); // 扩展关闭时不解码
         var m = arguments[idx];
-        if (typeof m === "string" && m.indexOf("\\u") !== -1) {
+        var raw = m;
+        if (settings.enc && typeof m === "string" && m.indexOf("~") !== -1) {
           var d = decode(m);
           d = stripSig(d);
           console.log("[TT] recv[" + label + "]: \"" + d + "\"");
           arguments[idx] = d;
         }
-        return orig.apply(this, arguments);
+        var result = orig.apply(this, arguments);
+        // 将原始编码文本存入消息对象，供开关切换时使用
+        if (typeof raw === "string" && raw.indexOf("~") !== -1) {
+          try {
+            var msgs = CB.messages;
+            if (msgs.length > 0) msgs[msgs.length - 1]._raw = raw;
+          } catch (e) {}
+        }
+        return result;
       };
     }
     CB.addChatMessage       = mkDec(CB.addChatMessage,       1, "pub");
@@ -210,8 +213,16 @@
 
     var origSys = CB.addSystemMessage;
     CB.addSystemMessage = function (p, m, u) {
-      if (settings.on && typeof m === "string") m = decode(m);
-      return origSys.call(this, p, m, u);
+      var raw = m;
+      if (settings.enc && typeof m === "string") m = decode(m);
+      var result = origSys.call(this, p, m, u);
+      if (typeof raw === "string" && raw.indexOf("~") !== -1) {
+        try {
+          var msgs = CB.messages;
+          if (msgs.length > 0) msgs[msgs.length - 1]._raw = raw;
+        } catch (e) {}
+      }
+      return result;
     };
     return true;
   }

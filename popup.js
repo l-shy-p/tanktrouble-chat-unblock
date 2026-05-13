@@ -12,8 +12,8 @@ var ANCHORS = {
 
 // 每种语言的 UI 文本
 var T = {
-  on:    { en:"Enable Extension", zh:"启用扩展", ja:"拡張機能を有効化", ko:"확장 활성화", ru:"Включить", ar:"تفعيل الإضافة", fr:"Activer", es:"Activar", de:"Aktivieren", pt:"Ativar" },
-  onD:   { en:"Turn on/off message encoding", zh:"开关消息编码", ja:"メッセージエンコードを切替", ko:"메시지 인코딩 전환", ru:"Вкл/выкл кодирование", ar:"تشغيل/إيقاف الترميز", fr:"Activer/désactiver l'encodage", es:"Activar/desactivar codificación", de:"Ein-/Ausschalten", pt:"Ligar/desligar codificação" },
+  on:    { en:"Enable Encoding", zh:"启用编码", ja:"エンコードを有効化", ko:"인코딩 활성화", ru:"Включить кодирование", ar:"تفعيل الترميز", fr:"Activer l'encodage", es:"Activar codificación", de:"Kodierung aktivieren", pt:"Ativar codificação" },
+  onD:   { en:"Toggle encoding for message display", zh:"切换消息文字的编码显示", ja:"メッセージのエンコード表示を切り替え", ko:"메시지 인코딩 표시 전환", ru:"Переключить отображение кодирования", ar:"تبديل عرض الترميز", fr:"Basculer l'affichage de l'encodage", es:"Alternar visualización de codificación", de:"Kodierungsanzeige umschalten", pt:"Alternar exibição de codificação" },
   sig:   { en:"Signature", zh:"扩展签名", ja:"署名", ko:"서명", ru:"Подпись", ar:"توقيع", fr:"Signature", es:"Firma", de:"Signatur", pt:"Assinatura" },
   sigD:  { en:"Append [Chat Unblocker] tag for non-users", zh:"为非扩展用户附加 [Chat Unblocker] 标记", ja:"未導入者に [Chat Unblocker] を表示", ko:"미설치 사용자에게 [Chat Unblocker] 태그 표시", ru:"Добавлять [Chat Unblocker] для не-пользователей", ar:"إضافة علامة [Chat Unblocker] للمستخدمين الآخرين", fr:"Ajouter [Chat Unblocker] pour les non-utilisateurs", es:"Añadir [Chat Unblocker] para no usuarios", de:"[Chat Unblocker] für Nicht-Nutzer anhängen", pt:"Adicionar [Chat Unblocker] para não usuários" },
   active:{ en:"Active", zh:"运行中", ja:"作動中", ko:"작동 중", ru:"Активно", ar:"نشط", fr:"Actif", es:"Activo", de:"Aktiv", pt:"Ativo" },
@@ -35,6 +35,7 @@ var langSel = document.getElementById("langSel");
 var linkInp = document.getElementById("linkInput");
 var copyBtn = document.getElementById("copyBtn");
 var resetBtn= document.getElementById("resetBtn");
+var content = document.querySelector(".content");
 
 // ---- 当前语言 ----
 var lang = "en";
@@ -67,10 +68,13 @@ function save(k, v) {
   });
 }
 
+// ---- 隐藏内容直到设置加载完成 ----
+document.getElementById("mainContent").style.display = "none";
+
 // ---- 加载设置 ----
 try {
-  chrome.storage.local.get(["enabled", "signatureEnabled", "lang"], function (d) {
-    var ena = d.enabled !== undefined ? d.enabled : true;
+  chrome.storage.local.get(["encodeEnabled", "signatureEnabled", "lang"], function (d) {
+    var ena = d.encodeEnabled !== undefined ? d.encodeEnabled : true;
     var sig = d.signatureEnabled !== undefined ? d.signatureEnabled : true;
     tglOn.checked = ena;
     tglSig.checked = sig;
@@ -78,14 +82,16 @@ try {
     lang = d.lang || "en";
     langSel.value = lang;
     localize(lang);
+    document.getElementById("mainContent").style.display = "";
   });
 } catch (e) {
   localize("en");
+  document.getElementById("mainContent").style.display = "";
 }
 
 // ---- 开关事件 ----
 tglOn.addEventListener("change", function () {
-  save("enabled", this.checked);
+  save("encodeEnabled", this.checked);
   setOn(this.checked);
 });
 
