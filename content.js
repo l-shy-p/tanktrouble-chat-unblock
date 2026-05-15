@@ -2,7 +2,7 @@
 (function () {
   "use strict";
 
-  var VERSION = "2.2";
+  var VERSION = "2.3";
   var SIG_PREFIX = "[Chat Unblocker V" + VERSION + "] ";
   var V1_SIG = " [Chat Unblocker]";
 
@@ -108,6 +108,7 @@
     for (var i = 0; i < s.length; i++) {
       var c = s.charCodeAt(i);
       if (c > 127) r += "\\u" + ("000" + c.toString(16)).slice(-4);
+      else if (s.charAt(i) === "\\") r += "\\\\";
       else r += s.charAt(i);
     }
     return r;
@@ -193,7 +194,7 @@
         } else {
           text = parsed;
         }
-        if (hasNon && settings.enc && settings.sig) text = SIG_PREFIX + text;
+        if (hasNon && settings.enc && settings.sig) text = (settings.fmt === "v1" ? (text + V1_SIG) : (SIG_PREFIX + text));
         var usernames = this.recipientUsernames.slice();
 
         resolveRecipients(CB, usernames, function (ok) {
@@ -231,7 +232,7 @@
       var textToSend;
       if (settings.enc) {
         textToSend = settings.fmt === "v1" ? encodeV1(parsed) : encodeV2(parsed);
-        if (settings.sig) textToSend = SIG_PREFIX + textToSend;
+        if (settings.sig) textToSend = (settings.fmt === "v1" ? (textToSend + V1_SIG) : (SIG_PREFIX + textToSend));
       } else {
         textToSend = parsed;
       }

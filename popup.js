@@ -161,7 +161,7 @@ resetBtn.addEventListener("click", function () {
   save("_resetRequest", Date.now());
 });
 
-var LOCAL_VER = "2.2";
+var LOCAL_VER = "2.3";
 var MANIFEST_URL = "https://raw.githubusercontent.com/L-Shy-P/TankTrouble-Chat-Unblock/master/manifest.json";
 var verDot  = document.getElementById("verDot");
 var verLabel = document.getElementById("verLabel");
