@@ -29,11 +29,11 @@ TankTrouble.com blocks non-ASCII characters in chat — Chinese, Japanese, Korea
 - 🎛 **Popup panel** with language selector (10 languages)
 - ✍️ **Signature watermark** — non-extension users see a link to install
 
-### What's New in v2.2
-- ✅ **V1.2 format compatibility** — automatically detects and decodes old `\uXXXX` messages
-- 🔄 **Format switcher** — choose between V2.2 (`~XXXX`) and V1.2 (`\uXXXX`) encoding
+### What's New in v2.3
+- 🐛 **Fixed V1.2 compatibility** — v1 mode now uses correct V1 signature format; v1.2 users can read messages again
+- 🔄 **Format switcher** — choose between V2 (`~XXXX`) and V1.2 (`\uXXXX`) encoding
 - ⚠️ **V1.2 warning** — warns that some V1.2 character combinations may be blocked by game server
-- 🏷️ **Version signature** — messages now prefixed with `[Chat Unblocker V2.2]`
+- 🏷️ **Version signature** — V2 messages prefixed with `[Chat Unblocker V2.3]`; V1 messages use original suffix
 - 🌐 **V1.2 label** — old format messages display with `[V1.2 Format]` prefix (i18n)
 
 ### Install
@@ -67,11 +67,11 @@ TankTrouble.com 的聊天系统会拦截非 ASCII 字符——中文、日文、
 - 🎛 多语言弹出面板（10 种语言）
 - ✍️ 未装扩展的玩家会看到安装链接
 
-### v2.2 更新内容
-- ✅ **兼容 V1.2 格式** — 自动识别并解码旧的 `\uXXXX` 消息
-- 🔄 **格式切换器** — 可选择 V2.2（`~XXXX`）或 V1.2（`\uXXXX`）编码格式
+### v2.3 更新内容
+- 🐛 **修复 V1.2 兼容性** — v1 模式现使用正确的 V1 签名格式；v1.2 用户可正常阅读消息
+- 🔄 **格式切换器** — 可选择 V2（`~XXXX`）或 V1.2（`\uXXXX`）编码格式
 - ⚠️ **V1.2 警告提示** — 部分 V1.2 字符组合可能被游戏服务器拦截
-- 🏷️ **版本签名** — 消息前缀改为 `[Chat Unblocker V2.2]`
+- 🏷️ **版本签名** — V2 消息前缀 `[Chat Unblocker V2.3]`；V1 消息使用原始后缀
 - 🌐 **V1.2 标识** — 旧格式消息显示时带 `[V1.2 格式]` 前缀（多语言）
 
 ### 安装
