@@ -47,24 +47,23 @@
     if (d.type === "reset") { doReset(); }
   });
 
-  // ---- 切换消息显示（编码开关 → 直接操作 DOM 元素） ----
+  // ---- 切换消息显示（编码开关 → 交换 CB.messages 后重绘） ----
   function toggleMessages() {
     var now = Date.now();
     if (now - _lastToggle < 400) return;
     _lastToggle = now;
     try {
-      var chatBody = document.querySelector(".chatBody");
-      if (!chatBody) return;
-      var msgEls = chatBody.querySelectorAll(".msg");
-      for (var i = 0; i < msgEls.length; i++) {
-        var el = msgEls[i];
-        var raw = el.getAttribute("data-raw");
-        if (raw) {
-          var cur = el.textContent || el.innerText;
-          el.setAttribute("data-raw", cur);
-          el.textContent = raw;
+      var CB = window.TankTrouble && window.TankTrouble.ChatBox;
+      if (!CB || !CB.messages) return;
+      for (var i = 0; i < CB.messages.length; i++) {
+        var msg = CB.messages[i];
+        if (msg._raw) {
+          var tmp = msg.message;
+          msg.message = msg._raw;
+          msg._raw = tmp;
         }
       }
+      CB._refreshChat(true);
       console.log("[TT] messages toggled, enc=" + settings.enc);
     } catch (e) { console.warn("[TT] toggle err:", e); }
   }
@@ -245,15 +244,13 @@
     };
 
     // ---- 接收 ----
-    function storeRawOnDom(raw, decoded, isOldFormat) {
+    function storeRaw(raw, decoded, isOldFormat) {
       try {
-        var chatBody = document.querySelector(".chatBody");
-        if (!chatBody) return;
-        var msgEls = chatBody.querySelectorAll(".msg");
-        if (msgEls.length === 0) return;
-        var lastEl = msgEls[msgEls.length - 1];
-        if (!lastEl.getAttribute("data-raw")) {
-          lastEl.setAttribute("data-raw", settings.enc ? raw : decoded);
+        var msgs = CB.messages;
+        if (!msgs || msgs.length === 0) return;
+        var lastMsg = msgs[msgs.length - 1];
+        if (!lastMsg._raw) {
+          lastMsg._raw = settings.enc ? raw : decoded;
         }
       } catch (e) {}
     }
@@ -279,8 +276,15 @@
           var label = isOldFormat ? (V1_LABEL[lang] || V1_LABEL["en"]) : "";
           arguments[idx] = label + decoded;
         }
+        var prevLen = CB.messages.length;
         var result = orig.apply(this, arguments);
-        if (decoded) storeRawOnDom(raw, decoded, isOldFormat);
+        if (decoded) {
+          if (prevLen < CB.messages.length) {
+            storeRaw(raw, decoded, isOldFormat);
+          } else {
+            setTimeout(function () { storeRaw(raw, decoded, isOldFormat); }, 50);
+          }
+        }
         return result;
       };
     }
@@ -306,8 +310,15 @@
         var label = isOldFormat ? (V1_LABEL[lang] || V1_LABEL["en"]) : "";
         m = label + decoded;
       }
+      var prevLen = CB.messages.length;
       var result = origSys.call(this, p, m, u);
-      if (decoded) storeRawOnDom(raw, decoded, isOldFormat);
+      if (decoded) {
+        if (prevLen < CB.messages.length) {
+          storeRaw(raw, decoded, isOldFormat);
+        } else {
+          setTimeout(function () { storeRaw(raw, decoded, isOldFormat); }, 50);
+        }
+      }
       return result;
     };
     return true;
