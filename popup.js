@@ -1,4 +1,4 @@
-// TT Chat Unblock — Popup (V2.2)
+// TT Chat Unblock — Popup (V2.3)
 
 var BASE = "https://github.com/L-Shy-P/TankTrouble-Chat-Unblock/tree/master";
 

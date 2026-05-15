@@ -1,4 +1,4 @@
-// TT Chat Unblock — MAIN world (V2.2)
+// TT Chat Unblock — MAIN world (V2.3)
 (function () {
   "use strict";
 
@@ -7,6 +7,8 @@
   var V1_SIG = " [Chat Unblocker]";
 
   var settings = { sig: true, enc: true, fmt: "v2", lang: "en" };
+  var _refreshing = false;
+  var _lastToggle = 0;
 
   var MSG_NO_RECIPIENTS = {
     en: "No valid recipients — message not sent",
@@ -48,9 +50,13 @@
 
   // ---- 切换消息显示（编码开关 → 交换 CB.messages 后重绘） ----
   function toggleMessages() {
+    var now = Date.now();
+    if (now - _lastToggle < 400) return;
+    _lastToggle = now;
     try {
       var CB = window.TankTrouble && window.TankTrouble.ChatBox;
       if (!CB || !CB.messages) return;
+      _refreshing = true;
       for (var i = 0; i < CB.messages.length; i++) {
         var msg = CB.messages[i];
         if (msg._raw) {
@@ -62,6 +68,7 @@
       CB._refreshChat(true);
       console.log("[TT] messages toggled, enc=" + settings.enc);
     } catch (e) { console.warn("[TT] toggle err:", e); }
+    _refreshing = false;
   }
 
   function doReset() {
@@ -263,10 +270,13 @@
         }
         var prevLen = CB.messages.length;
         var result = orig.apply(this, arguments);
-        if (typeof raw === "string" && (isV2(raw) || isV1(raw))) {
+        if (!_refreshing && typeof raw === "string" && (isV2(raw) || isV1(raw))) {
           try {
             var msgs = CB.messages;
-            if (prevLen < msgs.length) msgs[prevLen]._raw = raw;
+            if (prevLen < msgs.length) {
+              var newMsg = msgs[prevLen];
+              if (!("_raw" in newMsg)) newMsg._raw = raw;
+            }
           } catch (e) {}
         }
         return result;
@@ -296,10 +306,13 @@
       }
       var prevLen = CB.messages.length;
       var result = origSys.call(this, p, m, u);
-      if (typeof raw === "string" && (isV2(raw) || isV1(raw))) {
+      if (!_refreshing && typeof raw === "string" && (isV2(raw) || isV1(raw))) {
         try {
           var msgs = CB.messages;
-          if (prevLen < msgs.length) msgs[prevLen]._raw = raw;
+          if (prevLen < msgs.length) {
+            var newMsg = msgs[prevLen];
+            if (!("_raw" in newMsg)) newMsg._raw = raw;
+          }
         } catch (e) {}
       }
       return result;
