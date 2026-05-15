@@ -7,7 +7,6 @@
   var V1_SIG = " [Chat Unblocker]";
 
   var settings = { sig: true, enc: true, fmt: "v2", lang: "en" };
-  var _refreshing = false;
   var _lastToggle = 0;
 
   var MSG_NO_RECIPIENTS = {
@@ -48,27 +47,26 @@
     if (d.type === "reset") { doReset(); }
   });
 
-  // ---- 切换消息显示（编码开关 → 交换 CB.messages 后重绘） ----
+  // ---- 切换消息显示（编码开关 → 直接操作 DOM 元素） ----
   function toggleMessages() {
     var now = Date.now();
     if (now - _lastToggle < 400) return;
     _lastToggle = now;
     try {
-      var CB = window.TankTrouble && window.TankTrouble.ChatBox;
-      if (!CB || !CB.messages) return;
-      _refreshing = true;
-      for (var i = 0; i < CB.messages.length; i++) {
-        var msg = CB.messages[i];
-        if (msg._raw) {
-          var tmp = msg.message;
-          msg.message = msg._raw;
-          msg._raw = tmp;
+      var chatBody = document.querySelector(".chatBody");
+      if (!chatBody) return;
+      var msgEls = chatBody.querySelectorAll(".msg");
+      for (var i = 0; i < msgEls.length; i++) {
+        var el = msgEls[i];
+        var raw = el.getAttribute("data-raw");
+        if (raw) {
+          var cur = el.textContent || el.innerText;
+          el.setAttribute("data-raw", cur);
+          el.textContent = raw;
         }
       }
-      CB._refreshChat(true);
       console.log("[TT] messages toggled, enc=" + settings.enc);
     } catch (e) { console.warn("[TT] toggle err:", e); }
-    _refreshing = false;
   }
 
   function doReset() {
@@ -247,6 +245,19 @@
     };
 
     // ---- 接收 ----
+    function storeRawOnDom(raw, decoded, isOldFormat) {
+      try {
+        var chatBody = document.querySelector(".chatBody");
+        if (!chatBody) return;
+        var msgEls = chatBody.querySelectorAll(".msg");
+        if (msgEls.length === 0) return;
+        var lastEl = msgEls[msgEls.length - 1];
+        if (!lastEl.getAttribute("data-raw")) {
+          lastEl.setAttribute("data-raw", settings.enc ? raw : decoded);
+        }
+      } catch (e) {}
+    }
+
     function mkDec(orig, idx, label) {
       return function () {
         var m = arguments[idx];
@@ -254,31 +265,22 @@
         var decoded = null;
         var isOldFormat = false;
 
-        if (settings.enc && typeof m === "string") {
+        if (typeof m === "string") {
           if (isV2(m)) {
             decoded = stripSig(decodeV2(m));
           } else if (isV1(m)) {
             decoded = stripSig(decodeV1(m));
             isOldFormat = true;
           }
-          if (decoded) {
-            var lang = settings.lang || "en";
-            var label = isOldFormat ? (V1_LABEL[lang] || V1_LABEL["en"]) : "";
-            arguments[idx] = label + decoded;
-            console.log("[TT] recv[" + label + "]: \"" + arguments[idx] + "\"");
-          }
         }
-        var prevLen = CB.messages.length;
+
+        if (settings.enc && decoded) {
+          var lang = settings.lang || "en";
+          var label = isOldFormat ? (V1_LABEL[lang] || V1_LABEL["en"]) : "";
+          arguments[idx] = label + decoded;
+        }
         var result = orig.apply(this, arguments);
-        if (!_refreshing && typeof raw === "string" && (isV2(raw) || isV1(raw))) {
-          try {
-            var msgs = CB.messages;
-            if (prevLen < msgs.length) {
-              var newMsg = msgs[prevLen];
-              if (!("_raw" in newMsg)) newMsg._raw = raw;
-            }
-          } catch (e) {}
-        }
+        if (decoded) storeRawOnDom(raw, decoded, isOldFormat);
         return result;
       };
     }
@@ -291,30 +293,21 @@
       var raw = m;
       var decoded = null;
       var isOldFormat = false;
-      if (settings.enc && typeof m === "string") {
+      if (typeof m === "string") {
         if (isV2(m)) {
           decoded = stripSig(decodeV2(m));
         } else if (isV1(m)) {
           decoded = stripSig(decodeV1(m));
           isOldFormat = true;
         }
-        if (decoded) {
-          var lang = settings.lang || "en";
-          var label = isOldFormat ? (V1_LABEL[lang] || V1_LABEL["en"]) : "";
-          m = label + decoded;
-        }
       }
-      var prevLen = CB.messages.length;
+      if (settings.enc && decoded) {
+        var lang = settings.lang || "en";
+        var label = isOldFormat ? (V1_LABEL[lang] || V1_LABEL["en"]) : "";
+        m = label + decoded;
+      }
       var result = origSys.call(this, p, m, u);
-      if (!_refreshing && typeof raw === "string" && (isV2(raw) || isV1(raw))) {
-        try {
-          var msgs = CB.messages;
-          if (prevLen < msgs.length) {
-            var newMsg = msgs[prevLen];
-            if (!("_raw" in newMsg)) newMsg._raw = raw;
-          }
-        } catch (e) {}
-      }
+      if (decoded) storeRawOnDom(raw, decoded, isOldFormat);
       return result;
     };
     return true;
