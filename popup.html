@@ -38,6 +38,10 @@
     .btn-row button { width: 100%; padding: 7px; font-size: 12px; background: #0f3460; color: #f80; border: 1px solid #f80; border-radius: 4px; cursor: pointer; transition: 0.15s; }
     .btn-row button:hover { background: #f80; color: #1a1a2e; }
 
+    .warning { background: #3a2a00; border: 1px solid #fc0; border-radius: 4px; padding: 8px 10px; margin: 8px 0; font-size: 11px; color: #fc0; display: flex; gap: 6px; align-items: flex-start; }
+    .warn-icon { font-size: 14px; flex-shrink: 0; }
+    .warn-text { line-height: 1.4; }
+
     .version-row { display: flex; align-items: center; gap: 6px; padding: 6px 0; margin-top: 4px; }
     .ver-dot { width: 8px; height: 8px; border-radius: 50%; background: #888; flex-shrink: 0; }
     .ver-dot-inline.major { background: #f44; }
@@ -53,7 +57,7 @@
 <body>
   <div class="header">
     <h1>🛡 TT Chat Unblock</h1>
-    <div class="ver" id="verLabel"><span class="ver-dot-inline ok" id="verDot"></span> v2.1 — Stable</div>
+    <div class="ver" id="verLabel"><span class="ver-dot-inline ok" id="verDot"></span> v2.2 — Stable</div>
     <div class="dot-row">
       <div class="dot" id="dot"></div>
       <span id="sText">Active</span>
@@ -76,6 +80,24 @@
         <span class="d" id="dSig">Append [Chat Unblocker] tag for non-users</span>
       </div>
       <label class="toggle"><input type="checkbox" id="tglSig"><span class="s"></span></label>
+    </div>
+
+    <!-- 格式选择 -->
+    <div class="setting">
+      <div class="setting-label">
+        <span class="t" id="lblFmt">Message Format</span>
+        <span class="d" id="dFmt">V2.2 is recommended</span>
+      </div>
+      <select class="lang-select" id="fmtSel" style="width:auto;padding:3px 6px;margin:0;font-size:11px;">
+        <option value="v2">V2.2 (~XXXX)</option>
+        <option value="v1">V1.2 (\uXXXX)</option>
+      </select>
+    </div>
+
+    <!-- V1.2 警告 -->
+    <div class="warning" id="warnBox" style="display:none;">
+      <span class="warn-icon">⚠</span>
+      <span class="warn-text" id="warnText"></span>
     </div>
 
     <!-- 语言选择 -->

@@ -1,9 +1,12 @@
-// TT Chat Unblock — MAIN world
+// TT Chat Unblock — MAIN world (V2.2)
 (function () {
   "use strict";
 
-  var SIGNATURE = " [Chat Unblocker]";
-  var settings = { sig: true, enc: true, lang: "en" };
+  var VERSION = "2.2";
+  var SIG_PREFIX = "[Chat Unblocker V" + VERSION + "] ";
+  var V1_SIG = " [Chat Unblocker]";
+
+  var settings = { sig: true, enc: true, fmt: "v2", lang: "en" };
 
   var MSG_NO_RECIPIENTS = {
     en: "No valid recipients — message not sent",
@@ -18,13 +21,27 @@
     pt: "Sem destinatários — não enviado"
   };
 
+  var V1_LABEL = {
+    en: "[V1.2 Format] ",
+    zh: "[V1.2格式] ",
+    ja: "[V1.2形式] ",
+    ko: "[V1.2형식] ",
+    ru: "[V1.2 Формат] ",
+    ar: "[V1.2 تنسيق] ",
+    fr: "[V1.2 Format] ",
+    es: "[V1.2 Formato] ",
+    de: "[V1.2 Format] ",
+    pt: "[V1.2 Formato] "
+  };
+
   // ---- bridge 通信 ----
   window.addEventListener("message", function (e) {
     if (!e.data || e.data.source !== "tt-bridge") return;
     var d = e.data.data;
-    if (d.type === "init")  { settings.sig = d.sig; settings.enc = d.enc; settings.lang = d.lang; console.log("[TT] init sig="+settings.sig+" enc="+settings.enc+" lang="+settings.lang); }
+    if (d.type === "init")  { settings.sig = d.sig; settings.enc = d.enc; settings.fmt = d.fmt || "v2"; settings.lang = d.lang; console.log("[TT] init sig=" + settings.sig + " enc=" + settings.enc + " fmt=" + settings.fmt + " lang=" + settings.lang); }
     if (d.type === "sig")   { settings.sig = d.value; console.log("[TT] sig→" + settings.sig); }
     if (d.type === "enc")   { settings.enc = d.value; console.log("[TT] enc→" + settings.enc); toggleMessages(); }
+    if (d.type === "fmt")   { settings.fmt = d.value; console.log("[TT] fmt→" + settings.fmt); }
     if (d.type === "lang")  { settings.lang = d.value; console.log("[TT] lang→" + settings.lang); }
     if (d.type === "reset") { doReset(); }
   });
@@ -62,13 +79,15 @@
     } catch (e) {}
   }
 
-  // ---- 编码/解码（~ 前缀避开敏感词过滤） ----
+  // ---- 编码/解码 ----
   function hasNonAscii(s) {
     if (!s) return false;
     for (var i = 0; i < s.length; i++) { if (s.charCodeAt(i) > 127) return true; }
     return false;
   }
-  function encode(s) {
+
+  // V2.2 格式：~XXXX
+  function encodeV2(s) {
     var r = "";
     for (var i = 0; i < s.length; i++) {
       var c = s.charCodeAt(i);
@@ -78,13 +97,42 @@
     }
     return r;
   }
-  function decode(s) {
+  function decodeV2(s) {
     if (!s) return s;
     return s.replace(/~([0-9a-fA-F]{4})/g, function (_, h) { return String.fromCharCode(parseInt(h, 16)); });
   }
+
+  // V1.2 格式：\uXXXX（字面反斜杠+u+4位十六进制）
+  function encodeV1(s) {
+    var r = "";
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i);
+      if (c > 127) r += "\\u" + ("000" + c.toString(16)).slice(-4);
+      else r += s.charAt(i);
+    }
+    return r;
+  }
+  function decodeV1(s) {
+    if (!s) return s;
+    return s.replace(/\\u([0-9a-fA-F]{4})/g, function (_, h) { return String.fromCharCode(parseInt(h, 16)); });
+  }
+
+  function isV2(s) { return s && s.indexOf("~") !== -1; }
+  function isV1(s) { return s && /\\u[0-9a-fA-F]{4}/.test(s); }
+
   function stripSig(s) {
     if (!s) return s;
-    var p = s.lastIndexOf(SIGNATURE);
+    var p = s.indexOf(SIG_PREFIX);
+    if (p === 0) return s.substring(SIG_PREFIX.length);
+    p = s.lastIndexOf(V1_SIG);
+    return p >= 0 ? s.substring(0, p) : s;
+  }
+
+  function stripSigForDisplay(s) {
+    if (!s) return s;
+    var p = s.indexOf(SIG_PREFIX);
+    if (p === 0) return s.substring(SIG_PREFIX.length);
+    p = s.lastIndexOf(V1_SIG);
     return p >= 0 ? s.substring(0, p) : s;
   }
 
@@ -125,7 +173,7 @@
     var TT = window.TankTrouble;
     if (!TT || !TT.ChatBox) return false;
     var CB = TT.ChatBox;
-    console.log("[TT] hooked");
+    console.log("[TT] hooked V" + VERSION);
 
     // ---- 发送 ----
     var origSendChat = CB.sendChat;
@@ -139,8 +187,13 @@
       if (this.recipientUsernames.length > 0) {
         var self = this;
         var hasNon = hasNonAscii(parsed);
-        var text = (hasNon && settings.enc) ? encode(parsed) : parsed;
-        if (hasNon && settings.enc && settings.sig) text += SIGNATURE;
+        var text;
+        if (hasNon && settings.enc) {
+          text = settings.fmt === "v1" ? encodeV1(parsed) : encodeV2(parsed);
+        } else {
+          text = parsed;
+        }
+        if (hasNon && settings.enc && settings.sig) text = SIG_PREFIX + text;
         var usernames = this.recipientUsernames.slice();
 
         resolveRecipients(CB, usernames, function (ok) {
@@ -177,8 +230,8 @@
 
       var textToSend;
       if (settings.enc) {
-        textToSend = encode(parsed);
-        if (settings.sig) textToSend += SIGNATURE;
+        textToSend = settings.fmt === "v1" ? encodeV1(parsed) : encodeV2(parsed);
+        if (settings.sig) textToSend = SIG_PREFIX + textToSend;
       } else {
         textToSend = parsed;
       }
@@ -190,15 +243,26 @@
       return function () {
         var m = arguments[idx];
         var raw = m;
-        if (settings.enc && typeof m === "string" && m.indexOf("~") !== -1) {
-          var d = decode(m);
-          d = stripSig(d);
-          console.log("[TT] recv[" + label + "]: \"" + d + "\"");
-          arguments[idx] = d;
+        var decoded = null;
+        var isOldFormat = false;
+
+        if (settings.enc && typeof m === "string") {
+          if (isV2(m)) {
+            decoded = stripSig(decodeV2(m));
+          } else if (isV1(m)) {
+            decoded = stripSig(decodeV1(m));
+            isOldFormat = true;
+          }
+          if (decoded) {
+            var lang = settings.lang || "en";
+            var label = isOldFormat ? (V1_LABEL[lang] || V1_LABEL["en"]) : "";
+            arguments[idx] = label + decoded;
+            console.log("[TT] recv[" + label + "]: \"" + arguments[idx] + "\"");
+          }
         }
         var result = orig.apply(this, arguments);
         // 将原始编码文本存入消息对象，供开关切换时使用
-        if (typeof raw === "string" && raw.indexOf("~") !== -1) {
+        if (typeof raw === "string" && (isV2(raw) || isV1(raw))) {
           try {
             var msgs = CB.messages;
             if (msgs.length > 0) msgs[msgs.length - 1]._raw = raw;
@@ -214,9 +278,23 @@
     var origSys = CB.addSystemMessage;
     CB.addSystemMessage = function (p, m, u) {
       var raw = m;
-      if (settings.enc && typeof m === "string") m = decode(m);
+      var decoded = null;
+      var isOldFormat = false;
+      if (settings.enc && typeof m === "string") {
+        if (isV2(m)) {
+          decoded = stripSig(decodeV2(m));
+        } else if (isV1(m)) {
+          decoded = stripSig(decodeV1(m));
+          isOldFormat = true;
+        }
+        if (decoded) {
+          var lang = settings.lang || "en";
+          var label = isOldFormat ? (V1_LABEL[lang] || V1_LABEL["en"]) : "";
+          m = label + decoded;
+        }
+      }
       var result = origSys.call(this, p, m, u);
-      if (typeof raw === "string" && raw.indexOf("~") !== -1) {
+      if (typeof raw === "string" && (isV2(raw) || isV1(raw))) {
         try {
           var msgs = CB.messages;
           if (msgs.length > 0) msgs[msgs.length - 1]._raw = raw;

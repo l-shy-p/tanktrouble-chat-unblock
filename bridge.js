@@ -8,19 +8,20 @@
   }
 
   // 初始加载 → 发送给 MAIN world
-  chrome.storage.local.get(["signatureEnabled", "encodeEnabled", "lang"], function (d) {
+  chrome.storage.local.get(["signatureEnabled", "encodeEnabled", "format", "lang"], function (d) {
     send({
       type: "init",
       sig: d.signatureEnabled !== undefined ? d.signatureEnabled : true,
       enc: d.encodeEnabled !== undefined ? d.encodeEnabled : true,
+      fmt: d.format || "v2",
       lang: d.lang || "en"
     });
   });
 
-  // 变更监听 → 实时同步
   chrome.storage.onChanged.addListener(function (c) {
     if (c.signatureEnabled) send({ type: "sig", value: c.signatureEnabled.newValue });
     if (c.encodeEnabled) send({ type: "enc", value: c.encodeEnabled.newValue });
+    if (c.format) send({ type: "fmt", value: c.format.newValue });
     if (c.lang) send({ type: "lang", value: c.lang.newValue });
     if (c._resetRequest && c._resetRequest.newValue) {
       send({ type: "reset" });
