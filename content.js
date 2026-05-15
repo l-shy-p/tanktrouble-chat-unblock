@@ -194,7 +194,7 @@
         } else {
           text = parsed;
         }
-        if (hasNon && settings.enc && settings.sig) text = (settings.fmt === "v1" ? (text + V1_SIG) : (SIG_PREFIX + text));
+        if (hasNon && settings.enc && settings.sig) text += V1_SIG;
         var usernames = this.recipientUsernames.slice();
 
         resolveRecipients(CB, usernames, function (ok) {
@@ -232,7 +232,7 @@
       var textToSend;
       if (settings.enc) {
         textToSend = settings.fmt === "v1" ? encodeV1(parsed) : encodeV2(parsed);
-        if (settings.sig) textToSend = (settings.fmt === "v1" ? (textToSend + V1_SIG) : (SIG_PREFIX + textToSend));
+        if (settings.sig) textToSend += V1_SIG;
       } else {
         textToSend = parsed;
       }
@@ -261,12 +261,12 @@
             console.log("[TT] recv[" + label + "]: \"" + arguments[idx] + "\"");
           }
         }
+        var prevLen = CB.messages.length;
         var result = orig.apply(this, arguments);
-        // 将原始编码文本存入消息对象，供开关切换时使用
         if (typeof raw === "string" && (isV2(raw) || isV1(raw))) {
           try {
             var msgs = CB.messages;
-            if (msgs.length > 0) msgs[msgs.length - 1]._raw = raw;
+            if (prevLen < msgs.length) msgs[prevLen]._raw = raw;
           } catch (e) {}
         }
         return result;
@@ -294,11 +294,12 @@
           m = label + decoded;
         }
       }
+      var prevLen = CB.messages.length;
       var result = origSys.call(this, p, m, u);
       if (typeof raw === "string" && (isV2(raw) || isV1(raw))) {
         try {
           var msgs = CB.messages;
-          if (msgs.length > 0) msgs[msgs.length - 1]._raw = raw;
+          if (prevLen < msgs.length) msgs[prevLen]._raw = raw;
         } catch (e) {}
       }
       return result;
