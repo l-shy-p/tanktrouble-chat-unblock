@@ -1,4 +1,4 @@
-// TT Chat Unblock — Popup (V2.3)
+// TT Chat Unblock — Popup (V2.4)
 
 var BASE = "https://github.com/L-Shy-P/TankTrouble-Chat-Unblock/tree/master";
 
@@ -13,20 +13,22 @@ var T = {
   on:    { en:"Enable Encoding", zh:"启用编码", ja:"エンコードを有効化", ko:"인코딩 활성화", ru:"Включить кодирование", ar:"تفعيل الترميز", fr:"Activer l'encodage", es:"Activar codificación", de:"Kodierung aktivieren", pt:"Ativar codificação" },
   onD:   { en:"Toggle encoding for message display", zh:"切换消息文字的编码显示", ja:"メッセージのエンコード表示を切り替え", ko:"메시지 인코딩 표시 전환", ru:"Переключить отображение кодирования", ar:"تبديل عرض الترميز", fr:"Basculer l'affichage de l'encodage", es:"Alternar visualización de codificación", de:"Kodierungsanzeige umschalten", pt:"Alternar exibição de codificação" },
   sig:   { en:"Signature", zh:"扩展签名", ja:"署名", ko:"서명", ru:"Подпись", ar:"توقيع", fr:"Signature", es:"Firma", de:"Signatur", pt:"Assinatura" },
-  sigD:  { en:"Append [Chat Unblocker V2.2] prefix", zh:"为消息添加 [Chat Unblocker V2.2] 前缀", ja:"メッセージに [Chat Unblocker V2.2] プレフィックスを付与", ko:"메시지에 [Chat Unblocker V2.2] 접두사 추가", ru:"Добавлять префикс [Chat Unblocker V2.2]", ar:"إضافة بادئة [Chat Unblocker V2.2]", fr:"Ajouter le préfixe [Chat Unblocker V2.2]", es:"Añadir prefijo [Chat Unblocker V2.2]", de:"[Chat Unblocker V2.2]-Präfix anhängen", pt:"Adicionar prefixo [Chat Unblocker V2.2]" },
+  sigD:  { en:"Append [Chat Unblocker] tag for non-users", zh:"为未安装扩展的玩家显示安装链接", ja:"未インストールのプレイヤーにリンクを表示", ko:"확장을 설치하지 않은 플레이어에게 링크 표시", ru:"Показать ссылку для игроков без расширения", ar:"إظهار الرابط للاعبين بدون الملحق", fr:"Afficher le lien pour les joueurs sans extension", es:"Mostrar enlace para jugadores sin extensión", de:"Link für Spieler ohne Erweiterung anzeigen", pt:"Mostrar link para jogadores sem extensão" },
   fmt:   { en:"Message Format", zh:"消息格式", ja:"メッセージ形式", ko:"메시지 형식", ru:"Формат сообщения", ar:"تنسيق الرسالة", fr:"Format du message", es:"Formato del mensaje", de:"Nachrichtenformat", pt:"Formato da mensagem" },
-  fmtD:  { en:"V2.2 recommended; V1.2 may be blocked", zh:"推荐V2.2；V1.2可能被服务器拦截", ja:"V2.2推奨。V1.2はブロックされる可能性あり", ko:"V2.2 권장. V1.2는 서버에서 차단될 수 있음", ru:"Рекомендуется V2.2; V1.2 может быть заблокирован", ar:"يوصى بـ V2.2؛ قد يتم حظر V1.2", fr:"V2.2 recommandé ; V1.2 peut être bloqué", es:"V2.2 recomendado; V1.2 puede ser bloqueado", de:"V2.2 empfohlen; V1.2 kann blockiert werden", pt:"V2.2 recomendado; V1.2 pode ser bloqueado" },
+  fmtD:  { en:"V2.x recommended; V1.2 may be blocked", zh:"推荐V2.x；V1.2可能被服务器拦截", ja:"V2.x推奨。V1.2はブロックされる可能性あり", ko:"V2.x 권장. V1.2는 서버에서 차단될 수 있음", ru:"Рекомендуется V2.x; V1.2 может быть заблокирован", ar:"يوصى بـ V2.x؛ قد يتم حظر V1.2", fr:"V2.x recommandé ; V1.2 peut être bloqué", es:"V2.x recomendado; V1.2 puede ser bloqueado", de:"V2.x empfohlen; V1.2 kann blockiert werden", pt:"V2.x recomendado; V1.2 pode ser bloqueado" },
+  lang:  { en:"Page Language", zh:"页面语言", ja:"ページ言語", ko:"페이지 언어", ru:"Язык страницы", ar:"لغة الصفحة", fr:"Langue de la page", es:"Idioma de la página", de:"Seitensprache", pt:"Idioma da página" },
+  easter:{ en:"This is NOT a translator!", zh:"这不是翻译器！", ja:"これは翻訳機ではありません！", ko:"이건 번역기가 아닙니다!", ru:"Это НЕ переводчик!", ar:"هذا ليس مترجمًا!", fr:"Ce n'est PAS un traducteur !", es:"¡Esto NO es un traductor!", de:"Das ist KEIN Übersetzer!", pt:"Isso NÃO é um tradutor!" },
   warn:  {
-    en: "V1.2 format uses \\uXXXX escapes. Certain character combinations may be intercepted by the game server. Use V2.2 (~XXXX) for reliable delivery.",
-    zh: "V1.2 格式使用 \\uXXXX 转义。某些字符组合可能被游戏服务器拦截。建议使用 V2.2 (~XXXX) 以确保可靠发送。",
-    ja: "V1.2形式は\\uXXXXエスケープを使用します。特定の文字の組み合わせがゲームサーバーにブロックされる場合があります。確実な送信にはV2.2（~XXXX）を使用してください。",
-    ko: "V1.2 형식은 \\uXXXX 이스케이프를 사용합니다. 특정 문자 조합은 게임 서버에서 차단될 수 있습니다. 안정적인 전송을 위해 V2.2(~XXXX)를 사용하세요.",
-    ru: "Формат V1.2 использует экранирование \\uXXXX. Некоторые комбинации символов могут быть заблокированы сервером. Используйте V2.2 (~XXXX) для надёжной отправки.",
-    ar: "يستخدم تنسيق V1.2 هروب \\uXXXX. قد يتم اعتراض بعض مجموعات الأحرف بواسطة خادم اللعبة. استخدم V2.2 (~XXXX) للإرسال الموثوق.",
-    fr: "Le format V1.2 utilise des séquences \\uXXXX. Certaines combinaisons de caractères peuvent être interceptées par le serveur. Utilisez V2.2 (~XXXX) pour un envoi fiable.",
-    es: "El formato V1.2 usa escapes \\uXXXX. Ciertas combinaciones de caracteres pueden ser interceptadas por el servidor. Use V2.2 (~XXXX) para un envío confiable.",
-    de: "V1.2 verwendet \\uXXXX-Escapes. Bestimmte Zeichenkombinationen können vom Server blockiert werden. Verwenden Sie V2.2 (~XXXX) für zuverlässiges Senden.",
-    pt: "O formato V1.2 usa escapes \\uXXXX. Certas combinações de caracteres podem ser interceptadas pelo servidor. Use V2.2 (~XXXX) para envio confiável."
+    en: "V1.2 format uses \\uXXXX escapes. Certain character combinations may be intercepted by the game server. Use V2.x (~XXXX) for reliable delivery.",
+    zh: "V1.2 格式使用 \\uXXXX 转义。某些字符组合可能被游戏服务器拦截。建议使用 V2.x (~XXXX) 以确保可靠发送。",
+    ja: "V1.2形式は\\uXXXXエスケープを使用します。特定の文字の組み合わせがゲームサーバーにブロックされる場合があります。確実な送信にはV2.x（~XXXX）を使用してください。",
+    ko: "V1.2 형식은 \\uXXXX 이스케이프를 사용합니다. 특정 문자 조합은 게임 서버에서 차단될 수 있습니다. 안정적인 전송을 위해 V2.x(~XXXX)를 사용하세요.",
+    ru: "Формат V1.2 использует экранирование \\uXXXX. Некоторые комбинации символов могут быть заблокированы сервером. Используйте V2.x (~XXXX) для надёжной отправки.",
+    ar: "يستخدم تنسيق V1.2 هروب \\uXXXX. قد يتم اعتراض بعض مجموعات الأحرف بواسطة خادم اللعبة. استخدم V2.x (~XXXX) للإرسال الموثوق.",
+    fr: "Le format V1.2 utilise des séquences \\uXXXX. Certaines combinaisons de caractères peuvent être interceptées par le serveur. Utilisez V2.x (~XXXX) pour un envoi fiable.",
+    es: "El formato V1.2 usa escapes \\uXXXX. Ciertas combinaciones de caracteres pueden ser interceptadas por el servidor. Use V2.x (~XXXX) para un envío confiable.",
+    de: "V1.2 verwendet \\uXXXX-Escapes. Bestimmte Zeichenkombinationen können vom Server blockiert werden. Verwenden Sie V2.x (~XXXX) für zuverlässiges Senden.",
+    pt: "O formato V1.2 usa escapes \\uXXXX. Certas combinações de caracteres podem ser interceptadas pelo servidor. Use V2.x (~XXXX) para envio confiável."
   },
   active:{ en:"Active", zh:"运行中", ja:"作動中", ko:"작동 중", ru:"Активно", ar:"نشط", fr:"Actif", es:"Activo", de:"Aktiv", pt:"Ativo" },
   off:   { en:"Disabled", zh:"已禁用", ja:"無効", ko:"비활성화", ru:"Отключено", ar:"معطل", fr:"Désactivé", es:"Desactivado", de:"Deaktiviert", pt:"Desativado" },
@@ -68,6 +70,7 @@ function localize(l) {
   document.getElementById("dSig").textContent   = t("sigD", l);
   document.getElementById("lblFmt").textContent = t("fmt", l);
   document.getElementById("dFmt").textContent   = t("fmtD", l);
+  document.getElementById("lblLang").textContent = t("lang", l);
   warnText.textContent = t("warn", l);
   resetBtn.textContent = t("reset", l);
   copyBtn.textContent  = t("copy", l);
@@ -143,6 +146,26 @@ langSel.addEventListener("change", function () {
   checkVersion();
 });
 
+// 页面语言悬浮彩蛋
+var langHoverTimer = null;
+var easterEl = null;
+document.getElementById("lblLang").addEventListener("mouseenter", function () {
+  langHoverTimer = setTimeout(function () {
+    if (easterEl) return;
+    easterEl = document.createElement("div");
+    easterEl.style.cssText = "position:fixed;z-index:9999;left:50%;top:50%;transform:translate(-50%,-50%);background:#333;color:#ccc;padding:8px 14px;border-radius:6px;font-size:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.3);pointer-events:none;";
+    easterEl.textContent = t("easter", lang);
+    document.body.appendChild(easterEl);
+    setTimeout(function () {
+      if (easterEl) { easterEl.style.opacity = "0"; easterEl.style.transition = "opacity .3s"; }
+      setTimeout(function () { if (easterEl) { document.body.removeChild(easterEl); easterEl = null; } }, 300);
+    }, 2000);
+  }, 5000);
+});
+document.getElementById("lblLang").addEventListener("mouseleave", function () {
+  if (langHoverTimer) { clearTimeout(langHoverTimer); langHoverTimer = null; }
+});
+
 copyBtn.addEventListener("click", function () {
   linkInp.select();
   try {
@@ -161,7 +184,7 @@ resetBtn.addEventListener("click", function () {
   save("_resetRequest", Date.now());
 });
 
-var LOCAL_VER = "2.3";
+var LOCAL_VER = "2.4";
 var MANIFEST_URL = "https://raw.githubusercontent.com/L-Shy-P/TankTrouble-Chat-Unblock/master/manifest.json";
 var verDot  = document.getElementById("verDot");
 var verLabel = document.getElementById("verLabel");
