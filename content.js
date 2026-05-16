@@ -1,9 +1,10 @@
-// TT Chat Unblock — MAIN world (V2.3)
+// TT Chat Unblock — MAIN world (V2.5)
 (function () {
   "use strict";
 
-  var VERSION = "2.3";
-  var SIG_PREFIX = "[Chat Unblocker V" + VERSION + "] ";
+  var VERSION = "2.5";
+  var V2_VER = " | v" + VERSION;
+  var V2_SIG = V2_VER + " [Chat Unblocker]";
   var V1_SIG = " [Chat Unblocker]";
 
   var settings = { sig: true, enc: true, fmt: "v2", lang: "en" };
@@ -127,18 +128,21 @@
 
   function stripSig(s) {
     if (!s) return s;
-    var p = s.indexOf(SIG_PREFIX);
-    if (p === 0) return s.substring(SIG_PREFIX.length);
-    p = s.lastIndexOf(V1_SIG);
-    return p >= 0 ? s.substring(0, p) : s;
-  }
-
-  function stripSigForDisplay(s) {
-    if (!s) return s;
-    var p = s.indexOf(SIG_PREFIX);
-    if (p === 0) return s.substring(SIG_PREFIX.length);
-    p = s.lastIndexOf(V1_SIG);
-    return p >= 0 ? s.substring(0, p) : s;
+    // V2.5+ 完整格式： | v2.5 [Chat Unblocker]
+    var p2 = s.lastIndexOf(V2_SIG);
+    if (p2 >= 0) return s.substring(0, p2) + V2_VER;
+    // V2.5+ 仅版本号： | v2.5
+    var pv = s.lastIndexOf(V2_VER);
+    if (pv >= 0) return s.substring(0, pv) + V2_VER;
+    // V1.2/V2.2 格式： [Chat Unblocker]
+    var p1 = s.lastIndexOf(V1_SIG);
+    if (p1 >= 0) return s.substring(0, p1);
+    // 旧前缀格式：[Chat Unblocker V2.x] 
+    if (s.indexOf("[Chat Unblocker V") === 0) {
+      var end = s.indexOf("] ");
+      if (end > 0) return s.substring(end + 2);
+    }
+    return s;
   }
 
   // ---- @私聊异步查找 ----
@@ -198,7 +202,10 @@
         } else {
           text = parsed;
         }
-        if (hasNon && settings.enc && settings.sig) text += V1_SIG;
+        if (hasNon && settings.enc) {
+          text += V2_VER;
+          if (settings.sig) text += " [Chat Unblocker]";
+        }
         var usernames = this.recipientUsernames.slice();
 
         resolveRecipients(CB, usernames, function (ok) {
@@ -236,7 +243,8 @@
       var textToSend;
       if (settings.enc) {
         textToSend = settings.fmt === "v1" ? encodeV1(parsed) : encodeV2(parsed);
-        if (settings.sig) textToSend += V1_SIG;
+        textToSend += V2_VER;
+        if (settings.sig) textToSend += " [Chat Unblocker]";
       } else {
         textToSend = parsed;
       }

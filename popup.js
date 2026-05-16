@@ -1,4 +1,4 @@
-// TT Chat Unblock — Popup (V2.4)
+// TT Chat Unblock — Popup (V2.5)
 
 var BASE = "https://github.com/L-Shy-P/TankTrouble-Chat-Unblock/tree/master";
 
@@ -13,7 +13,9 @@ var T = {
   on:    { en:"Enable Encoding", zh:"启用编码", ja:"エンコードを有効化", ko:"인코딩 활성화", ru:"Включить кодирование", ar:"تفعيل الترميز", fr:"Activer l'encodage", es:"Activar codificación", de:"Kodierung aktivieren", pt:"Ativar codificação" },
   onD:   { en:"Toggle encoding for message display", zh:"切换消息文字的编码显示", ja:"メッセージのエンコード表示を切り替え", ko:"메시지 인코딩 표시 전환", ru:"Переключить отображение кодирования", ar:"تبديل عرض الترميز", fr:"Basculer l'affichage de l'encodage", es:"Alternar visualización de codificación", de:"Kodierungsanzeige umschalten", pt:"Alternar exibição de codificação" },
   sig:   { en:"Signature", zh:"扩展签名", ja:"署名", ko:"서명", ru:"Подпись", ar:"توقيع", fr:"Signature", es:"Firma", de:"Signatur", pt:"Assinatura" },
-  sigD:  { en:"Append [Chat Unblocker] tag for non-users", zh:"为未安装扩展的玩家显示安装链接", ja:"未インストールのプレイヤーにリンクを表示", ko:"확장을 설치하지 않은 플레이어에게 링크 표시", ru:"Показать ссылку для игроков без расширения", ar:"إظهار الرابط للاعبين بدون الملحق", fr:"Afficher le lien pour les joueurs sans extension", es:"Mostrar enlace para jugadores sin extensión", de:"Link für Spieler ohne Erweiterung anzeigen", pt:"Mostrar link para jogadores sem extensão" },
+  sigD:  { en:"Append [Chat Unblocker] tag for non-users", zh:"为未安装扩展的玩家显示签名", ja:"未インストールのプレイヤーに署名を表示", ko:"확장을 설치하지 않은 플레이어에게 서명 표시", ru:"Показать подпись для игроков без расширения", ar:"إظهار توقيع للاعبين بدون الملحق", fr:"Afficher la signature pour les joueurs sans extension", es:"Mostrar firma para jugadores sin extensión", de:"Signatur für Spieler ohne Erweiterung anzeigen", pt:"Mostrar assinatura para jogadores sem extensão" },
+  sigLock:{ en:"Signature is required in V1.2 mode", zh:"V1.2模式下签名必须开启", ja:"V1.2モードでは署名が必要です", ko:"V1.2 모드에서는 서명이 필요합니다", ru:"Подпись обязательна в режиме V1.2", ar:"التوقيع مطلوب في وضع V1.2", fr:"La signature est requise en mode V1.2", es:"La firma es requerida en modo V1.2", de:"Signatur ist im V1.2-Modus erforderlich", pt:"Assinatura é obrigatória no modo V1.2" },
+  sigV1Warn:{ en:"Warning: If you turn off the signature, V1.2 users will not be able to see your message content.", zh:"警告：关闭签名后，V1.2用户将无法看到你的消息内容。", ja:"警告：署名をオフにすると、V1.2ユーザーはメッセージ内容を表示できません。", ko:"경고: 서명을 끄면 V1.2 사용자는 메시지 내용을 볼 수 없습니다.", ru:"Внимание: Если вы отключите подпись, пользователи V1.2 не смогут видеть ваши сообщения.", ar:"تحذير: إذا قمت بإيقاف التوقيع، لن يتمكن مستخدمو V1.2 من رؤية محتوى رسالتك.", fr:"Avertissement : Si vous désactivez la signature, les utilisateurs V1.2 ne pourront pas voir votre message.", es:"Advertencia: Si desactivas la firma, los usuarios V1.2 no podrán ver tu mensaje.", de:"Warnung: Wenn du die Signatur ausschaltest, können V1.2-Nutzer deine Nachricht nicht sehen.", pt:"Aviso: Se você desativar a assinatura, os usuários V1.2 não poderão ver sua mensagem." },
   fmt:   { en:"Message Format", zh:"消息格式", ja:"メッセージ形式", ko:"메시지 형식", ru:"Формат сообщения", ar:"تنسيق الرسالة", fr:"Format du message", es:"Formato del mensaje", de:"Nachrichtenformat", pt:"Formato da mensagem" },
   fmtD:  { en:"V2.x recommended; V1.2 may be blocked", zh:"推荐V2.x；V1.2可能被服务器拦截", ja:"V2.x推奨。V1.2はブロックされる可能性あり", ko:"V2.x 권장. V1.2는 서버에서 차단될 수 있음", ru:"Рекомендуется V2.x; V1.2 может быть заблокирован", ar:"يوصى بـ V2.x؛ قد يتم حظر V1.2", fr:"V2.x recommandé ; V1.2 peut être bloqué", es:"V2.x recomendado; V1.2 puede ser bloqueado", de:"V2.x empfohlen; V1.2 kann blockiert werden", pt:"V2.x recomendado; V1.2 pode ser bloqueado" },
   lang:  { en:"Page Language", zh:"页面语言", ja:"ページ言語", ko:"페이지 언어", ru:"Язык страницы", ar:"لغة الصفحة", fr:"Langue de la page", es:"Idioma de la página", de:"Seitensprache", pt:"Idioma da página" },
@@ -87,12 +89,57 @@ function setOn(ena) {
   else     { dot.classList.add("off");    sText.textContent = t("off", lang); }
 }
 
+var sigWarnShown = false;
+
 function updateWarning() {
+  var sigWrap = tglSig.closest(".toggle");
   if (fmtSel.value === "v1") {
     warnBox.style.display = "flex";
+    requestAnimationFrame(function () {
+      warnBox.style.maxHeight = "80px";
+      warnBox.style.opacity = "1";
+      warnBox.style.padding = "8px 10px";
+      warnBox.style.margin = "8px 0";
+    });
   } else {
-    warnBox.style.display = "none";
+    warnBox.style.maxHeight = "0";
+    warnBox.style.opacity = "0";
+    warnBox.style.padding = "0 10px";
+    warnBox.style.margin = "0";
+    setTimeout(function () { if (warnBox.style.display !== "none") warnBox.style.display = "none"; }, 300);
+    sigWrap.classList.remove("locked");
+    sigWrap.classList.remove("shake");
+    sigWrap.classList.remove("off-red");
+    hideSigV1Warn();
+    sigWarnShown = false;
   }
+}
+
+function showSigV1Warn() {
+  var old = document.querySelector(".tt-sig-v1-warn");
+  if (old) old.remove();
+  var el = document.createElement("div");
+  el.className = "tt-sig-v1-warn";
+  el.style.cssText = "background:#3a0a00;border:1px solid #f44;border-radius:4px;padding:0 10px;margin:0;font-size:11px;color:#f88;line-height:1.4;max-height:0;opacity:0;overflow:hidden;transition:max-height .3s ease, opacity .3s ease, padding .3s ease, margin .3s ease;";
+  el.textContent = t("sigV1Warn", lang);
+  var setting = tglSig.closest(".setting");
+  setting.parentNode.insertBefore(el, setting.nextSibling);
+  requestAnimationFrame(function () {
+    el.style.maxHeight = "100px";
+    el.style.opacity = "1";
+    el.style.padding = "8px 10px";
+    el.style.margin = "6px 0 0";
+  });
+}
+
+function hideSigV1Warn() {
+  var el = document.querySelector(".tt-sig-v1-warn");
+  if (!el) return;
+  el.style.maxHeight = "0";
+  el.style.opacity = "0";
+  el.style.padding = "0 10px";
+  el.style.margin = "0";
+  setTimeout(function () { if (el.parentNode) el.remove(); }, 300);
 }
 
 function save(k, v) {
@@ -110,6 +157,7 @@ try {
     var ena = d.encodeEnabled !== undefined ? d.encodeEnabled : true;
     var sig = d.signatureEnabled !== undefined ? d.signatureEnabled : true;
     var fmt = d.format || "v2";
+    if (fmt === "v1") sig = true;
     tglOn.checked = ena;
     tglSig.checked = sig;
     fmtSel.value = fmt;
@@ -117,6 +165,12 @@ try {
     lang = d.lang || "en";
     langSel.value = lang;
     localize(lang);
+    var fmtWrap = document.getElementById("fmtWrap");
+    var langWrap = document.getElementById("langWrap");
+    requestAnimationFrame(function () {
+      if (fmtWrap) { fmtWrap.classList.add("show"); }
+      if (langWrap) { langWrap.classList.add("show"); }
+    });
     checkVersion();
     document.getElementById("mainContent").style.display = "";
   });
@@ -132,6 +186,28 @@ tglOn.addEventListener("change", function () {
 });
 
 tglSig.addEventListener("change", function () {
+  if (fmtSel.value === "v1" && !this.checked && !sigWarnShown) {
+    this.checked = true;
+    var sigWrap = this.closest(".toggle");
+    sigWrap.classList.add("shake");
+    setTimeout(function () {
+      sigWrap.classList.remove("shake");
+    }, 400);
+    showSigV1Warn();
+    sigWarnShown = true;
+    return;
+  }
+  if (fmtSel.value === "v1" && !this.checked && sigWarnShown) {
+    var sigWrap = this.closest(".toggle");
+    sigWrap.classList.add("off-red");
+    sigWarnShown = false;
+  }
+  if (fmtSel.value === "v1" && this.checked) {
+    var sigWrap = this.closest(".toggle");
+    sigWrap.classList.remove("off-red");
+    hideSigV1Warn();
+    sigWarnShown = false;
+  }
   save("signatureEnabled", this.checked);
 });
 
@@ -184,7 +260,7 @@ resetBtn.addEventListener("click", function () {
   save("_resetRequest", Date.now());
 });
 
-var LOCAL_VER = "2.4";
+var LOCAL_VER = "2.5";
 var MANIFEST_URL = "https://raw.githubusercontent.com/L-Shy-P/TankTrouble-Chat-Unblock/master/manifest.json";
 var verDot  = document.getElementById("verDot");
 var verLabel = document.getElementById("verLabel");
