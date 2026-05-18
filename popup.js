@@ -14,6 +14,8 @@ var T = {
   onD:   { en:"Toggle encoding for message display", zh:"切换消息文字的编码显示", ja:"メッセージのエンコード表示を切り替え", ko:"메시지 인코딩 표시 전환", ru:"Переключить отображение кодирования", ar:"تبديل عرض الترميز", fr:"Basculer l'affichage de l'encodage", es:"Alternar visualización de codificación", de:"Kodierungsanzeige umschalten", pt:"Alternar exibição de codificação" },
   sig:   { en:"Signature", zh:"扩展签名", ja:"署名", ko:"서명", ru:"Подпись", ar:"توقيع", fr:"Signature", es:"Firma", de:"Signatur", pt:"Assinatura" },
   sigD:  { en:"Append [Chat Unblocker] tag for non-users", zh:"为未安装扩展的玩家显示签名", ja:"未インストールのプレイヤーに署名を表示", ko:"확장을 설치하지 않은 플레이어에게 서명 표시", ru:"Показать подпись для игроков без расширения", ar:"إظهار توقيع للاعبين بدون الملحق", fr:"Afficher la signature pour les joueurs sans extension", es:"Mostrar firma para jugadores sin extensión", de:"Signatur für Spieler ohne Erweiterung anzeigen", pt:"Mostrar assinatura para jogadores sem extensão" },
+  ver:   { en:"Version Tag", zh:"版本号", ja:"バージョンタグ", ko:"버전 태그", ru:"Тег версии", ar:"علامة الإصدار", fr:"Tag de version", es:"Etiqueta de versión", de:"Versionstag", pt:"Tag de versão" },
+  verD:  { en:"Show \" | v2.5\" in decoded messages", zh:"在解码消息中显示\" | v2.5\"", ja:"デコードされたメッセージに\" | v2.5\"を表示", ko:"디코딩된 메시지에\" | v2.5\" 표시", ru:"Показывать \" | v2.5\" в декодированных сообщениях", ar:"إظهار \" | v2.5\" في الرسائل المفككة", fr:"Afficher \" | v2.5\" dans les messages décodés", es:"Mostrar \" | v2.5\" en mensajes decodificados", de:"\" | v2.5\" in dekodierten Nachrichten anzeigen", pt:"Mostrar \" | v2.5\" em mensagens decodificadas" },
   sigLock:{ en:"Signature is required in V1.2 mode", zh:"V1.2模式下签名必须开启", ja:"V1.2モードでは署名が必要です", ko:"V1.2 모드에서는 서명이 필요합니다", ru:"Подпись обязательна в режиме V1.2", ar:"التوقيع مطلوب في وضع V1.2", fr:"La signature est requise en mode V1.2", es:"La firma es requerida en modo V1.2", de:"Signatur ist im V1.2-Modus erforderlich", pt:"Assinatura é obrigatória no modo V1.2" },
   sigV1Warn:{ en:"Warning: If you turn off the signature, V1.2 users will not be able to see your message content.", zh:"警告：关闭签名后，V1.2用户将无法看到你的消息内容。", ja:"警告：署名をオフにすると、V1.2ユーザーはメッセージ内容を表示できません。", ko:"경고: 서명을 끄면 V1.2 사용자는 메시지 내용을 볼 수 없습니다.", ru:"Внимание: Если вы отключите подпись, пользователи V1.2 не смогут видеть ваши сообщения.", ar:"تحذير: إذا قمت بإيقاف التوقيع، لن يتمكن مستخدمو V1.2 من رؤية محتوى رسالتك.", fr:"Avertissement : Si vous désactivez la signature, les utilisateurs V1.2 ne pourront pas voir votre message.", es:"Advertencia: Si desactivas la firma, los usuarios V1.2 no podrán ver tu mensaje.", de:"Warnung: Wenn du die Signatur ausschaltest, können V1.2-Nutzer deine Nachricht nicht sehen.", pt:"Aviso: Se você desativar a assinatura, os usuários V1.2 não poderão ver sua mensagem." },
   fmt:   { en:"Message Format", zh:"消息格式", ja:"メッセージ形式", ko:"메시지 형식", ru:"Формат сообщения", ar:"تنسيق الرسالة", fr:"Format du message", es:"Formato del mensaje", de:"Nachrichtenformat", pt:"Formato da mensagem" },
@@ -52,6 +54,7 @@ var dot     = document.getElementById("dot");
 var sText   = document.getElementById("sText");
 var tglOn   = document.getElementById("tglOn");
 var tglSig  = document.getElementById("tglSig");
+var tglVer  = document.getElementById("tglVer");
 var fmtSel  = document.getElementById("fmtSel");
 var langSel = document.getElementById("langSel");
 var linkInp = document.getElementById("linkInput");
@@ -70,6 +73,8 @@ function localize(l) {
   document.getElementById("dOn").textContent    = t("onD", l);
   document.getElementById("lblSig").textContent = t("sig", l);
   document.getElementById("dSig").textContent   = t("sigD", l);
+  document.getElementById("lblVer").textContent = t("ver", l);
+  document.getElementById("dVer").textContent   = t("verD", l);
   document.getElementById("lblFmt").textContent = t("fmt", l);
   document.getElementById("dFmt").textContent   = t("fmtD", l);
   document.getElementById("lblLang").textContent = t("lang", l);
@@ -153,13 +158,15 @@ function save(k, v) {
 document.getElementById("mainContent").style.display = "none";
 
 try {
-  chrome.storage.local.get(["encodeEnabled", "signatureEnabled", "format", "lang"], function (d) {
+  chrome.storage.local.get(["encodeEnabled", "signatureEnabled", "format", "lang", "versionEnabled"], function (d) {
     var ena = d.encodeEnabled !== undefined ? d.encodeEnabled : true;
     var sig = d.signatureEnabled !== undefined ? d.signatureEnabled : true;
+    var ver = d.versionEnabled !== undefined ? d.versionEnabled : true;
     var fmt = d.format || "v2";
     if (fmt === "v1") sig = true;
     tglOn.checked = ena;
     tglSig.checked = sig;
+    tglVer.checked = ver;
     fmtSel.value = fmt;
     setOn(ena);
     lang = d.lang || "en";
@@ -183,6 +190,10 @@ try {
 tglOn.addEventListener("change", function () {
   save("encodeEnabled", this.checked);
   setOn(this.checked);
+});
+
+tglVer.addEventListener("change", function () {
+  save("versionEnabled", this.checked);
 });
 
 tglSig.addEventListener("change", function () {
