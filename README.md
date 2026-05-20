@@ -29,6 +29,14 @@ TankTrouble.com blocks non-ASCII characters in chat — Chinese, Japanese, Korea
 - 🎛 **Popup panel** with language selector (10 languages)
 - ✍️ **Signature watermark** — non-extension users see `[Chat Unblocker]` tag
 
+### What's New in v2.6
+- 🎛 **Version number toggle** — signature watermark now includes a toggleable version number; with switch on: ` | v2.6 [Chat Unblocker]`; with switch off: ` [Chat Unblocker]` — let non-extension users choose readability or version info
+- 📋 **Fluent copy menu** — hover any message to reveal a copy icon; click to copy message text, or hover the icon for a dropdown menu with 3 options: copy text (without names), copy full message (with names), and copy individual player names
+- 🌍 **Full i18n support** — copy menu and all labels available in 10 languages (中文 / 日本語 / 한국어 / Русский / العربية / Français / Español / Deutsch / Português / English)
+- 🎬 **Microsoft Fluent animations** — elastic cubic-bezier transitions, velocity-aware movement (no jitter during fast mouse), scale-pulse click feedback, and smooth resize/drag following with fade effects
+- 🐛 **Fixed text selection visibility** — selected text displays green background + black text; text-shadow and text-stroke suppressed
+- 🔧 **Dynamic chat detection** — runtime `CB.chatBody` detection with `CB.chat` fallback; no hardcoded CSS class dependency
+
 ### What's New in v2.5
 - 🏷️ **Version tag in signature** — V2 messages now include ` | v2.5 [Chat Unblocker]` suffix; non-extension users can see the version number
 - 🔄 **V1.2 format compatibility** — V1.2 mode also shows ` | v2.5 [Chat Unblocker]`; legacy users can see version info
@@ -82,6 +90,14 @@ TankTrouble.com 的聊天系统会拦截非 ASCII 字符——中文、日文、
 - ⏱ 超时无应答自动恢复 UI
 - 🎛 多语言弹出面板（10 种语言）
 - ✍️ 未装扩展的玩家会看到 `[Chat Unblocker]` 签名水印
+
+### v2.6 更新内容
+- 🎛 **版本号显示开关** — 签名水印支持可切换版本号；开关打开：` | v2.6 [Chat Unblocker]`；开关关闭：` [Chat Unblocker]` — 让未装插件的用户选择可读性还是版本信息
+- 📋 **Fluent复制菜单** — 鼠标悬停任意消息显示复制图标；点击直接复制消息文字，或悬停图标弹出下拉菜单：复制内容（不含名字）、复制整条（含名字）、复制单个玩家名
+- 🌍 **完整多语言** — 复制菜单和所有标签支持10种语言
+- 🎬 **微软 Fluent 动画** — 弹性贝塞尔过渡、鼠标速度感知（快速移动不抖动）、点击缩放反馈、拖动/缩放时平滑跟随+淡出
+- 🐛 **修复选中文字可见性** — 框选文字绿色背景+黑色文字，阴影和描边被抑制
+- 🔧 **动态聊天检测** — 运行时 `CB.chatBody` 检测+ `CB.chat` 回退，不依赖硬编码CSS类名
 
 ### v2.5 更新内容
 - 🏷️ **签名带版本号** — V2 消息现在包含 ` | v2.5 [Chat Unblocker]` 后缀；未装扩展的玩家也能看到版本号

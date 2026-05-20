@@ -1,8 +1,8 @@
-// TT Chat Unblock — MAIN world (V2.5)
+// TT Chat Unblock — MAIN world (V2.6)
 (function () {
   "use strict";
 
-  var VERSION = "2.5";
+  var VERSION = "2.6";
   var V2_VER = " | v" + VERSION;
   var V2_SIG = V2_VER + " [Chat Unblocker]";
   var V1_SIG = " [Chat Unblocker]";
@@ -90,10 +90,8 @@
         var msg = CB.messages[i];
         if (msg._raw) {
           if (settings.enc) {
-            // 开启编码：解析 _raw 显示解码内容
             var decoded = null, isOld = false, isMixed = false;
             if (isV2(msg._raw) && isV1(msg._raw)) {
-              // 混合编码：先解V2再解V1
               decoded = stripSig(decodeV1(decodeV2(msg._raw)));
               isMixed = true;
             } else if (isV2(msg._raw)) {
@@ -113,7 +111,6 @@
               msg.message = label + decoded;
             }
           } else {
-            // 关闭编码：显示原始内容
             msg.message = msg._raw;
           }
         }
@@ -145,7 +142,6 @@
     return false;
   }
 
-  // V2.2 格式：~XXXX
   function encodeV2(s) {
     var r = "";
     for (var i = 0; i < s.length; i++) {
@@ -161,7 +157,6 @@
     return s.replace(/~([0-9a-fA-F]{4})/g, function (_, h) { return String.fromCharCode(parseInt(h, 16)); });
   }
 
-  // V1.2 格式：\uXXXX（字面反斜杠+u+4位十六进制）
   function encodeV1(s) {
     var r = "";
     for (var i = 0; i < s.length; i++) {
@@ -182,22 +177,18 @@
 
   function stripSig(s) {
     if (!s) return s;
-    // V2.5+ 完整格式： | v2.5 [Chat Unblocker]
     var p2 = s.lastIndexOf(V2_SIG);
     if (p2 >= 0) {
       var base = s.substring(0, p2);
       return settings.ver ? base + V2_VER : base;
     }
-    // V2.5+ 仅版本号： | v2.5
     var pv = s.lastIndexOf(V2_VER);
     if (pv >= 0) {
       var base = s.substring(0, pv);
       return settings.ver ? base + V2_VER : base;
     }
-    // V1.2/V2.2 格式： [Chat Unblocker]
     var p1 = s.lastIndexOf(V1_SIG);
     if (p1 >= 0) return s.substring(0, p1);
-    // 旧前缀格式：[Chat Unblocker V2.x] 
     if (s.indexOf("[Chat Unblocker V") === 0) {
       var end = s.indexOf("] ");
       if (end > 0) return s.substring(end + 2);
@@ -233,22 +224,402 @@
     }
   }
 
-  // 聊天文本可选中 + 换行 + 选中样式修复
+  // ---- 全局CSS：选中样式修复 + 文本换行修复 + 复制按钮样式 ----
   var style = document.createElement("style");
   style.textContent = [
-    ".chatBody, .chatBody * { user-select: text !important; -webkit-user-select: text !important; }",
-    ".chatBody { overflow-x: hidden !important; word-wrap: break-word !important; overflow-wrap: break-word !important; }",
-    ".chatBody > div, .chatBody > p, .chatBody > td, .chatBody div > div, .chatBody td > div, .chatBody td > p { word-wrap: break-word !important; overflow-wrap: break-word !important; word-break: break-word !important; white-space: normal !important; max-width: 100% !important; }",
-    ".chatBody *::selection { background: #4f8 !important; color: #000 !important; text-shadow: none !important; -webkit-text-stroke: 0 !important; -webkit-text-fill-color: #000 !important; }",
-    ".chatBody *::-moz-selection { background: #4f8 !important; color: #000 !important; text-shadow: none !important; }"
+    "[data-tt-chat-body], [data-tt-chat-body] * { user-select: text !important; -webkit-user-select: text !important; }",
+    "[data-tt-chat-body] { overflow-x: hidden !important; word-wrap: break-word !important; overflow-wrap: break-word !important; }",
+    "[data-tt-chat-body] > div, [data-tt-chat-body] > p, [data-tt-chat-body] > td, [data-tt-chat-body] div > div, [data-tt-chat-body] td > div, [data-tt-chat-body] td > p { word-wrap: break-word !important; overflow-wrap: break-word !important; word-break: break-word !important; white-space: normal !important; max-width: 100% !important; }",
+    "[data-tt-chat-body] *::selection { background: #4f8 !important; color: #000 !important; text-shadow: none !important; -webkit-text-stroke: 0px !important; -webkit-text-fill-color: #000 !important; }",
+    "[data-tt-chat-body] *::-moz-selection { background: #4f8 !important; color: #000 !important; text-shadow: none !important; }",
+    ".tt-copy-icon { transition: left 0.2s cubic-bezier(0.1,0.9,0.2,1.0), top 0.2s cubic-bezier(0.1,0.9,0.2,1.0), opacity 0.18s ease, transform 0.18s cubic-bezier(0.34,1.56,0.64,1), background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }",
+    ".tt-copy-icon:hover { background:rgba(255,255,255,0.97) !important; box-shadow:0 2px 8px rgba(0,0,0,0.18) !important; }",
+    ".tt-copy-menu { transition: left 0.2s cubic-bezier(0.1,0.9,0.2,1.0), top 0.2s cubic-bezier(0.1,0.9,0.2,1.0), opacity 0.18s ease; }"
   ].join("\n");
   document.head.appendChild(style);
+
+  // ---- 图标触发式复制菜单（悬停消息→图标→展开下拉菜单） ----
+  var _iconEl = null;
+  var _menuEl = null;
+  var _currentRow = null;
+  var _hideTimer = null;
+  var _menuItems = [];
+  var _chatContainerMarked = false;
+  var _firstShow = true;
+  var _veloTimer = null;
+  var _lastMouseX = 0;
+  var _lastMouseY = 0;
+  var _lastMouseTime = 0;
+  var _pendingRow = null;
+  var _resizeTimer = null;
+  var _resizing = false;
+
+  var COPY_LABELS = {
+    en: { icon: "\uD83D\uDCCB", copyText: "Copy text", copyName: "Copy name", copyFull: "Copy all", copied: "✓", title: "Copy" },
+    zh: { icon: "\uD83D\uDCCB", copyText: "复制内容", copyName: "复制名字", copyFull: "复制整条", copied: "✓", title: "复制" },
+    ja: { icon: "\uD83D\uDCCB", copyText: "本文コピー", copyName: "名前コピー", copyFull: "全てコピー", copied: "✓", title: "コピー" },
+    ko: { icon: "\uD83D\uDCCB", copyText: "내용 복사", copyName: "이름 복사", copyFull: "전체 복사", copied: "✓", title: "복사" },
+    ru: { icon: "\uD83D\uDCCB", copyText: "Копия текста", copyName: "Копия имени", copyFull: "Копия всего", copied: "✓", title: "Копия" },
+    ar: { icon: "\uD83D\uDCCB", copyText: "نسخ النص", copyName: "نسخ الاسم", copyFull: "نسخ الكل", copied: "✓", title: "نسخ" },
+    fr: { icon: "\uD83D\uDCCB", copyText: "Copier texte", copyName: "Copier nom", copyFull: "Tout copier", copied: "✓", title: "Copier" },
+    es: { icon: "\uD83D\uDCCB", copyText: "Copiar texto", copyName: "Copiar nombre", copyFull: "Copiar todo", copied: "✓", title: "Copiar" },
+    de: { icon: "\uD83D\uDCCB", copyText: "Text kopieren", copyName: "Name kopieren", copyFull: "Alles kopieren", copied: "✓", title: "Kopieren" },
+    pt: { icon: "\uD83D\uDCCB", copyText: "Copiar texto", copyName: "Copiar nome", copyFull: "Copiar tudo", copied: "✓", title: "Copiar" }
+  };
+
+  function _L(key) {
+    var lang = settings.lang || "en";
+    var map = COPY_LABELS[lang] || COPY_LABELS["en"];
+    return map[key];
+  }
+
+  function ensureChatMarked() {
+    if (_chatContainerMarked) return true;
+    try {
+      var TT = window.TankTrouble;
+      if (!TT || !TT.ChatBox) return false;
+      var CB = TT.ChatBox;
+      var el = (CB.chatBody && CB.chatBody[0]) || (CB.chat && CB.chat[0]);
+      if (el) {
+        el.setAttribute("data-tt-chat-body", "1");
+        _chatContainerMarked = true;
+        console.log("[TT] marked chat body:", el.tagName, el.className || "(no class)");
+
+        if (window.ResizeObserver) {
+          new ResizeObserver(function () {
+            clearTimeout(_resizeTimer);
+            if (!_resizing && _iconEl && _iconEl.style.opacity === "1") {
+              _resizing = true;
+              if (_menuEl) { _menuEl.style.opacity = "0"; _menuEl.style.pointerEvents = "none"; }
+              if (_iconEl) _iconEl.style.opacity = "0.6";
+            }
+            if (_currentRow) showIcon(_currentRow);
+            _resizeTimer = setTimeout(function () {
+              _resizing = false;
+              if (_iconEl && _iconEl.style.opacity !== "0") _iconEl.style.opacity = "1";
+              if (_currentRow) showIcon(_currentRow);
+            }, 180);
+          }).observe(el);
+        }
+
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  function getChat() { return document.querySelector("[data-tt-chat-body]"); }
+
+  function isInteractive(el) {
+    if (!el) return false;
+    var tag = el.tagName;
+    if (tag === "A" || tag === "BUTTON" || tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return true;
+    if (el.closest && el.closest("a, button")) return true;
+    if (typeof el.onclick === "function" || el.getAttribute("onclick")) return true;
+    return false;
+  }
+
+  function findMessageRow(el) {
+    if (!el) return null;
+    var chat = getChat();
+    if (!chat) return null;
+    var p = el;
+    while (p && p !== chat && p !== document.body) {
+      var tag = p.tagName;
+      if (tag === "TD" || tag === "TR") break;
+      if (p.parentElement === chat) break;
+      p = p.parentElement;
+    }
+    return (p && p !== chat && p !== document.body) ? p : null;
+  }
+
+  function getOrCreateIcon() {
+      if (_iconEl) return _iconEl;
+      _iconEl = document.createElement("div");
+      _iconEl.className = "tt-copy-icon";
+      _iconEl.style.cssText = "position:fixed;z-index:99998;opacity:0;pointer-events:none;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;border-radius:4px;cursor:pointer;background:rgba(255,255,255,0.94);color:#555;border:1px solid rgba(0,0,0,0.1);box-shadow:0 1px 4px rgba(0,0,0,0.1);";
+      _iconEl.textContent = _L("icon");
+      _iconEl.title = _L("title");
+      _iconEl.addEventListener("mouseenter", function () { clearTimeout(_hideTimer); showMenu(); });
+      _iconEl.addEventListener("mouseleave", function () { if (!_menuEl || _menuEl.style.opacity === "0") scheduleHide(); });
+      _iconEl.addEventListener("click", function (ev) { ev.stopPropagation(); copyRowText(); });
+      document.body.appendChild(_iconEl);
+      return _iconEl;
+    }
+
+    function getOrCreateMenu() {
+      if (_menuEl) return _menuEl;
+      _menuEl = document.createElement("div");
+      _menuEl.className = "tt-copy-menu";
+      _menuEl.style.cssText = "position:fixed;z-index:99999;opacity:0;pointer-events:none;border-radius:6px;background:rgba(255,255,255,0.96);border:1px solid rgba(0,0,0,0.1);box-shadow:0 4px 16px rgba(0,0,0,0.14);padding:4px 0;min-width:140px;font-size:12px;color:#333;";
+      _menuEl.addEventListener("mouseenter", function () { clearTimeout(_hideTimer); });
+      _menuEl.addEventListener("mouseleave", function () { scheduleHide(); });
+      document.body.appendChild(_menuEl);
+      return _menuEl;
+    }
+
+  function showMenu() {
+     var menu = getOrCreateMenu();
+     if (!_currentRow) return;
+     menu.innerHTML = "";
+     _menuItems = [];
+
+     var item = document.createElement("div");
+     item.className = "tt-copy-item";
+     item.style.cssText = "padding:6px 12px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;transition:background 0.1s;";
+     item.innerHTML = '<span style="font-size:14px;">\uD83D\uDCC4</span><span>' + _L("copyText") + '</span>';
+     item.addEventListener("mouseenter", function () { item.style.background = "rgba(0,0,0,0.05)"; });
+     item.addEventListener("mouseleave", function () { item.style.background = ""; });
+     item.addEventListener("click", function (ev) { copyItem(ev, "text", _currentRow); });
+     menu.appendChild(item);
+     _menuItems.push({ el: item, type: "text" });
+
+     var fullItem = document.createElement("div");
+     fullItem.className = "tt-copy-item";
+     fullItem.style.cssText = "padding:6px 12px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;transition:background 0.1s;";
+     fullItem.innerHTML = '<span style="font-size:14px;">\uD83D\uDCDD</span><span>' + _L("copyFull") + '</span>';
+     fullItem.addEventListener("mouseenter", function () { fullItem.style.background = "rgba(0,0,0,0.05)"; });
+     fullItem.addEventListener("mouseleave", function () { fullItem.style.background = ""; });
+     fullItem.addEventListener("click", function (ev) { copyItem(ev, "full", _currentRow); });
+     menu.appendChild(fullItem);
+     _menuItems.push({ el: fullItem, type: "full" });
+
+     var users = _currentRow.querySelectorAll(".username");
+     for (var i = 0; i < users.length; i++) {
+       (function (userEl) {
+         var name = (userEl.textContent || "").trim();
+         if (!name) return;
+         var uItem = document.createElement("div");
+         uItem.className = "tt-copy-item";
+         uItem.style.cssText = "padding:6px 12px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;transition:background 0.1s;";
+         uItem.innerHTML = '<span style="font-size:14px;">\uD83D\uDC64</span><span>' + _L("copyName") + ' <b>' + escapeHTML(name) + '</b></span>';
+         uItem.addEventListener("mouseenter", function () { uItem.style.background = "rgba(0,0,0,0.05)"; });
+         uItem.addEventListener("mouseleave", function () { uItem.style.background = ""; });
+         uItem.addEventListener("click", function (ev) { copyItem(ev, "name", userEl, name); });
+         menu.appendChild(uItem);
+         _menuItems.push({ el: uItem, type: "name", name: name });
+       })(users[i]);
+     }
+
+     var iconRect = _iconEl.getBoundingClientRect();
+     var menuW = menu.offsetWidth || 140;
+     var menuH = menu.offsetHeight || 40;
+
+     var left = iconRect.left - menuW - 4;
+     var top = iconRect.top + 12 - menuH / 2;
+     if (left + menuW > iconRect.left) {
+       top = iconRect.bottom + 4;
+       left = iconRect.left + 12 - menuW / 2;
+       if (left < 4) left = 4;
+       if (top + menuH > window.innerHeight - 4) top = iconRect.top - menuH - 4;
+     }
+     if (top < 4) top = 4;
+     if (top + menuH > window.innerHeight - 4) top = window.innerHeight - menuH - 4;
+
+     menu.style.transition = "none";
+     menu.style.left = left + "px";
+     menu.style.top = top + "px";
+     menu.offsetHeight;
+     menu.style.transition = "";
+     menu.style.pointerEvents = "auto";
+     menu.style.opacity = "1";
+   }
+
+  function hideAll() {
+    if (_iconEl) { _iconEl.style.opacity = "0"; _iconEl.style.pointerEvents = "none"; }
+    if (_menuEl) { _menuEl.style.opacity = "0"; _menuEl.style.pointerEvents = "none"; }
+    _currentRow = null;
+    _menuItems = [];
+    _firstShow = true;
+    _pendingRow = null;
+  }
+
+  function escapeHTML(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+  function isIconOrMenu(el) {
+    return el && (el === _iconEl || el === _menuEl ||
+      (_iconEl && _iconEl.contains(el)) || (_menuEl && _menuEl.contains(el)));
+  }
+
+  function showIcon(row) {
+    var icon = getOrCreateIcon();
+    var rect = row.getBoundingClientRect();
+    var top = rect.top + rect.height / 2 - 12;
+    if (top < 4) top = 4;
+    if (top > window.innerHeight - 28) top = window.innerHeight - 28;
+    icon.style.left = Math.max(4, rect.left - 30) + "px";
+    icon.style.top = top + "px";
+    icon.style.pointerEvents = "auto";
+    if (_firstShow && !_resizing) { icon.offsetHeight; }
+    icon.style.opacity = _resizing ? "0.6" : "1";
+    if (_firstShow) _firstShow = false;
+    _currentRow = row;
+  }
+
+  function scheduleHide() {
+    clearTimeout(_hideTimer);
+    _hideTimer = setTimeout(hideAll, 400);
+  }
+
+  function copyRowText() {
+    var row = _currentRow;
+    if (!row) return;
+    var clone = row.cloneNode(true);
+    var users = clone.querySelectorAll(".username");
+    for (var i = 0; i < users.length; i++) { users[i].parentNode.removeChild(users[i]); }
+    var txt = (clone.textContent || "").trim();
+    if (!txt) return;
+    try { navigator.clipboard.writeText(txt).then(flashIcon); }
+    catch (ex) {
+      var ta = document.createElement("textarea");
+      ta.value = txt; ta.style.cssText = "position:fixed;opacity:0;";
+      document.body.appendChild(ta); ta.select(); document.execCommand("copy");
+      document.body.removeChild(ta); flashIcon();
+    }
+  }
+
+  function flashIcon() {
+    if (!_iconEl) return;
+    _iconEl.style.transform = "scale(0.85)";
+    _iconEl.style.background = "rgba(76,175,80,0.25)";
+    _iconEl.style.borderColor = "#4caf50";
+    setTimeout(function () {
+      if (!_iconEl) return;
+      _iconEl.style.transform = "scale(1)";
+      _iconEl.style.background = "rgba(255,255,255,0.94)";
+      _iconEl.style.borderColor = "rgba(0,0,0,0.1)";
+    }, 200);
+  }
+
+  function copyItem(ev, type, row, name) {
+    ev.stopPropagation();
+    ev.preventDefault();
+    var txt;
+    if (type === "text") {
+      var clone = row.cloneNode(true);
+      var users = clone.querySelectorAll(".username");
+      for (var i = 0; i < users.length; i++) { users[i].parentNode.removeChild(users[i]); }
+      txt = (clone.textContent || "").trim();
+    } else if (type === "full") {
+      txt = (row.textContent || "").trim();
+    } else {
+      txt = name || "";
+    }
+    if (!txt) return;
+    try {
+      navigator.clipboard.writeText(txt).then(function () { flashItem(ev.target); });
+    } catch (ex) {
+      var ta = document.createElement("textarea");
+      ta.value = txt;
+      ta.style.cssText = "position:fixed;opacity:0;";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      flashItem(ev.target);
+    }
+  }
+
+  function flashItem(el) {
+    if (!el) return;
+    var item = el.closest && el.closest(".tt-copy-item");
+    if (!item) item = el;
+    var origBG = item.style.background;
+    item.style.background = "rgba(76,175,80,0.2)";
+    setTimeout(function () { item.style.background = origBG; }, 600);
+  }
+
+  document.addEventListener("mousemove", function (e) {
+    var now = Date.now();
+    var dx = e.clientX - _lastMouseX;
+    var dy = e.clientY - _lastMouseY;
+    var dt = now - _lastMouseTime;
+    _lastMouseX = e.clientX;
+    _lastMouseY = e.clientY;
+    _lastMouseTime = now;
+    if (dt < 16) return;
+    var speed = Math.sqrt(dx * dx + dy * dy) / dt;
+    clearTimeout(_veloTimer);
+    if (_pendingRow) {
+      _veloTimer = setTimeout(function () {
+        if (_pendingRow) {
+          clearTimeout(_hideTimer);
+          if (_menuEl) { _menuEl.style.opacity = "0"; _menuEl.style.pointerEvents = "none"; }
+          showIcon(_pendingRow);
+          _pendingRow = null;
+        }
+      }, speed > 0.5 ? 120 : 50);
+    }
+  }, true);
+
+  document.addEventListener("mouseover", function (e) {
+    if (!ensureChatMarked()) return;
+    var chat = getChat();
+    if (!chat) return;
+
+    var el = e.target;
+    if (!el || el.nodeType !== 1) return;
+
+    if (isIconOrMenu(el)) { clearTimeout(_hideTimer); return; }
+
+    if (!chat.contains(el)) { scheduleHide(); return; }
+
+    if (isInteractive(el)) return;
+
+    var selfTxt = (el.textContent || "").trim();
+    var row = findMessageRow(el);
+    if (!row || row === chat || selfTxt.length < 2) { scheduleHide(); return; }
+
+    if (_currentRow === row) {
+      if (_menuEl && _menuEl.style.opacity !== "0") return;
+      clearTimeout(_hideTimer);
+      return;
+    }
+
+    clearTimeout(_hideTimer);
+    if (_menuEl) { _menuEl.style.opacity = "0"; _menuEl.style.pointerEvents = "none"; }
+    _pendingRow = row;
+    var now = Date.now();
+    var dt = now - _lastMouseTime;
+    var speed = dt > 0 ? Math.sqrt(Math.pow(e.clientX - _lastMouseX, 2) + Math.pow(e.clientY - _lastMouseY, 2)) / dt : 0;
+    if (speed > 0.5 && dt < 200) { return; }
+    var r = _pendingRow;
+    _pendingRow = null;
+    showIcon(r);
+  }, true);
+
+  document.addEventListener("mouseout", function (e) {
+    var el = e.target;
+    if (!el || el.nodeType !== 1) return;
+    if (isIconOrMenu(el)) {
+      var rel = e.relatedTarget;
+      if (rel && isIconOrMenu(rel)) return;
+      scheduleHide();
+      return;
+    }
+    var chat = getChat();
+    if (el === _currentRow || (_currentRow && _currentRow.contains(el))) {
+      var rel2 = e.relatedTarget;
+      if (rel2 && isIconOrMenu(rel2)) return;
+      if (rel2 && chat && chat.contains(rel2)) return;
+      scheduleHide();
+    }
+  }, true);
+
+  console.log("[TT] icon-triggered copy menu ready");
 
   function hook() {
     var TT = window.TankTrouble;
     if (!TT || !TT.ChatBox) return false;
     var CB = TT.ChatBox;
     console.log("[TT] hooked V" + VERSION);
+
+    // ---- 标记聊天框DOM（优先使用chatBody，fallback到chat） ----
+    var chatEl = (CB.chatBody && CB.chatBody[0]) || (CB.chat && CB.chat[0]);
+    if (chatEl) {
+      chatEl.setAttribute("data-tt-chat-body", "1");
+      console.log("[TT] marked chat body:", chatEl.tagName, chatEl.className || "(no class)");
+    }
 
     // ---- 发送 ----
     var origSendChat = CB.sendChat;
@@ -276,7 +647,6 @@
       $(".tt-sending-indicator").fadeOut(200, function(){ $(this).remove(); });
     }
 
-    // 添加旋转动画
     var spinStyle = document.createElement("style");
     spinStyle.textContent = "@keyframes tt-spin { to { transform: rotate(360deg); } }";
     document.head.appendChild(spinStyle);
@@ -287,7 +657,6 @@
       if (!val) return origSendChat.apply(this, arguments);
       var parsed = this._parseChat();
 
-      // @私聊保护（始终生效，不受编码开关影响）
       if (this.recipientUsernames.length > 0) {
         var self = this;
         var hasNon = hasNonAscii(parsed);
@@ -331,7 +700,6 @@
         return;
       }
 
-      // 无 @：纯 ASCII 走原始流程；中文且编码开启则编码发送
       if (!hasNonAscii(parsed)) return origSendChat.apply(this, arguments);
       if (!parsed) return origSendChat.apply(this, arguments);
 
@@ -344,7 +712,6 @@
         textToSend = parsed;
       }
 
-      // 消息去重：如果内容和上一条相同且正在发送，加入队列等待
       if (textToSend === _lastSentText && _isSending) {
         _sendQueue.push(textToSend);
         return;
@@ -354,12 +721,10 @@
       _isSending = true;
       showSendingIndicator();
 
-      // 包装 _sendChat 以检测发送完成
       var self = this;
       var origSend = this._sendChat;
       this._sendChat = function(text) {
         origSend.call(self, text);
-        // 发送完成后检查队列
         setTimeout(function() {
           _isSending = false;
           hideSendingIndicator();
@@ -397,7 +762,6 @@
       var isMixed = false;
 
       if (hasV2 && hasV1) {
-        // 混合编码：先解V2再解V1
         decoded = stripSig(decodeV1(decodeV2(m)));
         isMixed = true;
       } else if (hasV2) {
@@ -470,86 +834,10 @@
       }
       return result;
     };
-    // ---- 消息悬浮复制按钮 ----
-    var _copyBtnTimer = null;
-    var _copyBtnEl = null;
 
-    function initCopyBtn() {
-      document.addEventListener("mouseover", function (e) {
-        var el = e.target;
-        if (!el || el.nodeType !== 1) return;
-        var chatBody = el.closest(".chatBody");
-        if (!chatBody) return;
-        var txt = (el.textContent || "").trim();
-        if (!txt || txt.length < 2 || txt.length > 3000) return;
-        if (el === _copyBtnEl) return;
-        removeCopyBtn();
-        if (el.classList.contains("tt-copy-btn")) return;
-        if (el.querySelector(".tt-copy-btn")) return;
-
-        var btn = document.createElement("span");
-        btn.className = "tt-copy-btn";
-        btn.textContent = "\uD83D\uDCCB";
-        btn.style.cssText = "position:absolute;right:4px;top:2px;cursor:pointer;opacity:0;background:rgba(0,0,0,0.7);color:#ccc;padding:1px 5px;border-radius:3px;font-size:11px;z-index:10;line-height:1.4;pointer-events:auto;";
-        var cs = getComputedStyle(el);
-        if (cs.position === "static") el.style.position = "relative";
-
-        btn.addEventListener("click", function (ev) {
-          ev.stopPropagation();
-          ev.preventDefault();
-          var t = (el.cloneNode(true).textContent || "").replace(/\uD83D\uDCCB|\u2713/g, "").trim();
-          try {
-            navigator.clipboard.writeText(t).then(function () {
-              btn.textContent = "\u2713";
-              btn.style.background = "#4f8";
-              btn.style.color = "#000";
-              setTimeout(function () { btn.textContent = "\uD83D\uDCCB"; btn.style.background = "rgba(0,0,0,0.7)"; btn.style.color = "#ccc"; }, 1000);
-            }).catch(function () { fallbackCopy(t, btn); });
-          } catch (ex) { fallbackCopy(t, btn); }
-        });
-
-        el.appendChild(btn);
-        _copyBtnEl = el;
-        requestAnimationFrame(function () { btn.style.opacity = "0.8"; });
-      });
-
-      document.addEventListener("mouseout", function (e) {
-        var el = e.target;
-        if (!el || el.nodeType !== 1) return;
-        if (el === _copyBtnEl) {
-          var related = e.relatedTarget;
-          if (related && (related === _copyBtnEl || _copyBtnEl.contains(related))) return;
-          removeCopyBtn();
-        }
-      });
-    }
-
-    function removeCopyBtn() {
-      if (_copyBtnEl) {
-        var btn = _copyBtnEl.querySelector(".tt-copy-btn");
-        if (btn) {
-          btn.style.opacity = "0";
-          setTimeout(function () { if (btn.parentNode) btn.parentNode.removeChild(btn); }, 200);
-        }
-        _copyBtnEl = null;
-      }
-    }
-
-    function fallbackCopy(txt, btn) {
-      var ta = document.createElement("textarea");
-      ta.value = txt;
-      ta.style.cssText = "position:fixed;opacity:0;pointer-events:none;";
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-      btn.textContent = "\u2713";
-      btn.style.background = "#4f8";
-      btn.style.color = "#000";
-      setTimeout(function () { btn.textContent = "\uD83D\uDCCB"; btn.style.background = "rgba(0,0,0,0.7)"; btn.style.color = "#ccc"; }, 1000);
-    }
-
-    initCopyBtn();
+    // ---- 复制按钮已在模块顶层初始化，此处确保标记 ----
+    ensureChatMarked();
+    console.log("[TT] copy menu ready (hook stage)");
 
     return true;
   }
