@@ -8,14 +8,17 @@
   }
 
   // 初始加载 → 发送给 MAIN world
-  chrome.storage.local.get(["signatureEnabled", "encodeEnabled", "format", "lang", "versionEnabled"], function (d) {
+  chrome.storage.local.get(["signatureEnabled", "encodeEnabled", "format", "lang", "versionEnabled", "mirrorEnabled"], function (d) {
+    var mir = d.mirrorEnabled !== undefined ? d.mirrorEnabled : true;
+    try { localStorage.setItem("tt-mir", mir ? "1" : "0"); } catch (e) {}
     send({
       type: "init",
       sig: d.signatureEnabled !== undefined ? d.signatureEnabled : true,
       enc: d.encodeEnabled !== undefined ? d.encodeEnabled : true,
       fmt: d.format || "v2",
       lang: d.lang || "en",
-      ver: d.versionEnabled !== undefined ? d.versionEnabled : true
+      ver: d.versionEnabled !== undefined ? d.versionEnabled : true,
+      mir: mir
     });
   });
 
@@ -25,6 +28,7 @@
     if (c.format) send({ type: "fmt", value: c.format.newValue });
     if (c.lang) send({ type: "lang", value: c.lang.newValue });
     if (c.versionEnabled) send({ type: "ver", value: c.versionEnabled.newValue });
+    if (c.mirrorEnabled) { try { localStorage.setItem("tt-mir", c.mirrorEnabled.newValue ? "1" : "0"); } catch (e) {} send({ type: "mir", value: c.mirrorEnabled.newValue }); }
     if (c._resetRequest && c._resetRequest.newValue) {
       send({ type: "reset" });
     }

@@ -1,13 +1,6 @@
-// TT Chat Unblock — Popup (V2.6)
+// TT Chat Unblock — Popup (V2.7)
 
 var BASE = "https://github.com/L-Shy-P/TankTrouble-Chat-Unblock/tree/master";
-
-var ANCHORS = {
-  en: "#english",    zh: "#中文",       ja: "#日本語",
-  ko: "#한국어",     ru: "#русский",    ar: "#العربية",
-  fr: "#français",   es: "#español",    de: "#deutsch",
-  pt: "#português"
-};
 
 var T = {
   on:    { en:"Enable Encoding", zh:"启用编码", ja:"エンコードを有効化", ko:"인코딩 활성화", ru:"Включить кодирование", ar:"تفعيل الترميز", fr:"Activer l'encodage", es:"Activar codificación", de:"Kodierung aktivieren", pt:"Ativar codificação" },
@@ -15,7 +8,7 @@ var T = {
   sig:   { en:"Signature", zh:"扩展签名", ja:"署名", ko:"서명", ru:"Подпись", ar:"توقيع", fr:"Signature", es:"Firma", de:"Signatur", pt:"Assinatura" },
   sigD:  { en:"Append [Chat Unblocker] tag for non-users", zh:"为未安装扩展的玩家显示签名", ja:"未インストールのプレイヤーに署名を表示", ko:"확장을 설치하지 않은 플레이어에게 서명 표시", ru:"Показать подпись для игроков без расширения", ar:"إظهار توقيع للاعبين بدون الملحق", fr:"Afficher la signature pour les joueurs sans extension", es:"Mostrar firma para jugadores sin extensión", de:"Signatur für Spieler ohne Erweiterung anzeigen", pt:"Mostrar assinatura para jogadores sem extensão" },
   ver:   { en:"Version Tag", zh:"版本号", ja:"バージョンタグ", ko:"버전 태그", ru:"Тег версии", ar:"علامة الإصدار", fr:"Tag de version", es:"Etiqueta de versión", de:"Versionstag", pt:"Tag de versão" },
-  verD:  { en:"Show \" | v2.6\" in decoded messages", zh:"在解码消息中显示\" | v2.6\"", ja:"デコードされたメッセージに\" | v2.6\"を表示", ko:"디코딩된 메시지에\" | v2.6\" 표시", ru:"Показывать \" | v2.6\" в декодированных сообщениях", ar:"إظهار \" | v2.6\" في الرسائل المفككة", fr:"Afficher \" | v2.6\" dans les messages décodés", es:"Mostrar \" | v2.6\" en mensajes decodificados", de:"\" | v2.6\" in dekodierten Nachrichten anzeigen", pt:"Mostrar \" | v2.6\" em mensagens decodificadas" },
+  verD:  { en:"Show \" | v2.7\" etc. version tags in decoded messages", zh:"在解码消息中显示\" | v2.7\"等版本号标识", ja:"デコードされたメッセージに\" | v2.7\"などのバージョンタグを表示", ko:"디코딩된 메시지에\" | v2.7\" 등의 버전 태그 표시", ru:"Показывать \" | v2.7\" и другие теги версий в декодированных сообщениях", ar:"إظهار \" | v2.7\" وغيرها من علامات الإصدار في الرسائل المفككة", fr:"Afficher \" | v2.7\" etc. dans les messages décodés", es:"Mostrar \" | v2.7\" etc. etiquetas de versión en mensajes decodificados", de:"\" | v2.7\" usw. Versionstags in dekodierten Nachrichten anzeigen", pt:"Mostrar \" | v2.7\" etc. tags de versão em mensagens decodificadas" },
   sigLock:{ en:"Signature is required in V1.2 mode", zh:"V1.2模式下签名必须开启", ja:"V1.2モードでは署名が必要です", ko:"V1.2 모드에서는 서명이 필요합니다", ru:"Подпись обязательна в режиме V1.2", ar:"التوقيع مطلوب في وضع V1.2", fr:"La signature est requise en mode V1.2", es:"La firma es requerida en modo V1.2", de:"Signatur ist im V1.2-Modus erforderlich", pt:"Assinatura é obrigatória no modo V1.2" },
   sigV1Warn:{ en:"Warning: If you turn off the signature, V1.2 users will not be able to see your message content.", zh:"警告：关闭签名后，V1.2用户将无法看到你的消息内容。", ja:"警告：署名をオフにすると、V1.2ユーザーはメッセージ内容を表示できません。", ko:"경고: 서명을 끄면 V1.2 사용자는 메시지 내용을 볼 수 없습니다.", ru:"Внимание: Если вы отключите подпись, пользователи V1.2 не смогут видеть ваши сообщения.", ar:"تحذير: إذا قمت بإيقاف التوقيع، لن يتمكن مستخدمو V1.2 من رؤية محتوى رسالتك.", fr:"Avertissement : Si vous désactivez la signature, les utilisateurs V1.2 ne pourront pas voir votre message.", es:"Advertencia: Si desactivas la firma, los usuarios V1.2 no podrán ver tu mensaje.", de:"Warnung: Wenn du die Signatur ausschaltest, können V1.2-Nutzer deine Nachricht nicht sehen.", pt:"Aviso: Se você desativar a assinatura, os usuários V1.2 não poderão ver sua mensagem." },
   fmt:   { en:"Message Format", zh:"消息格式", ja:"メッセージ形式", ko:"메시지 형식", ru:"Формат сообщения", ar:"تنسيق الرسالة", fr:"Format du message", es:"Formato del mensaje", de:"Nachrichtenformat", pt:"Formato da mensagem" },
@@ -40,6 +33,8 @@ var T = {
   copy:  { en:"Copy", zh:"复制", ja:"コピー", ko:"복사", ru:"Копировать", ar:"نسخ", fr:"Copier", es:"Copiar", de:"Kopieren", pt:"Copiar" },
   done:  { en:"Copied!", zh:"已复制！", ja:"コピー完了！", ko:"복사됨!", ru:"Скопировано!", ar:"تم النسخ!", fr:"Copié !", es:"¡Copiado!", de:"Kopiert!", pt:"Copiado!" },
   by:    { en:"Made by L_Shy_P", zh:"L_Shy_P 制作", ja:"L_Shy_P 制作", ko:"L_Shy_P 제작", ru:"Создано L_Shy_P", ar:"صنع بواسطة L_Shy_P", fr:"Créé par L_Shy_P", es:"Hecho por L_Shy_P", de:"Von L_Shy_P", pt:"Feito por L_Shy_P" },
+  mir:   { en:"Mirror Site", zh:"镜像网站", ja:"ミラーサイト", ko:"미러 사이트", ru:"Зеркало", ar:"موقع المرآة", fr:"Site miroir", es:"Sitio espejo", de:"Spiegelseite", pt:"Site espelho" },
+  mirD:  { en:"Run extension on cdn.tanktrouble.com", zh:"在 cdn.tanktrouble.com 上运行扩展", ja:"cdn.tanktrouble.com で拡張機能を実行", ko:"cdn.tanktrouble.com에서 확장 프로그램 실행", ru:"Запускать расширение на cdn.tanktrouble.com", ar:"تشغيل الإضافة على cdn.tanktrouble.com", fr:"Exécuter l'extension sur cdn.tanktrouble.com", es:"Ejecutar extensión en cdn.tanktrouble.com", de:"Erweiterung auf cdn.tanktrouble.com ausführen", pt:"Executar extensão em cdn.tanktrouble.com" },
   verChk:{ en:"Checking for updates...", zh:"正在检查更新...", ja:"更新を確認中...", ko:"업데이트 확인 중...", ru:"Проверка обновлений...", ar:"جارٍ التحقق من التحديثات...", fr:"Vérification des mises à jour...", es:"Comprobando actualizaciones...", de:"Suche nach Updates...", pt:"Verificando atualizações..." },
   verOK: { en:"Up to date (v{0})", zh:"已是最新 (v{0})", ja:"最新です (v{0})", ko:"최신 버전 (v{0})", ru:"Актуально (v{0})", ar:"محدث (v{0})", fr:"À jour (v{0})", es:"Actualizado (v{0})", de:"Aktuell (v{0})", pt:"Atualizado (v{0})" },
   verMaj:{ en:"v{0} available — major update!", zh:"v{0} 可用 — 大版本更新！", ja:"v{0} 利用可能 — メジャーアップデート！", ko:"v{0} 사용 가능 — 주요 업데이트!", ru:"v{0} доступно — крупное обновление!", ar:"v{0} متاح — تحديث رئيسي!", fr:"v{0} disponible — mise à jour majeure !", es:"v{0} disponible — ¡actualización mayor!", de:"v{0} verfügbar — großes Update!", pt:"v{0} disponível — grande atualização!" },
@@ -55,6 +50,7 @@ var sText   = document.getElementById("sText");
 var tglOn   = document.getElementById("tglOn");
 var tglSig  = document.getElementById("tglSig");
 var tglVer  = document.getElementById("tglVer");
+var tglMir  = document.getElementById("tglMir");
 var fmtSel  = document.getElementById("fmtSel");
 var langSel = document.getElementById("langSel");
 var linkInp = document.getElementById("linkInput");
@@ -65,7 +61,7 @@ var warnText= document.getElementById("warnText");
 
 var lang = "en";
 
-function getURL(l) { return BASE + (ANCHORS[l] || ""); }
+function getURL() { return BASE; }
 
 function localize(l) {
   lang = l;
@@ -77,11 +73,13 @@ function localize(l) {
   document.getElementById("dVer").textContent   = t("verD", l);
   document.getElementById("lblFmt").textContent = t("fmt", l);
   document.getElementById("dFmt").textContent   = t("fmtD", l);
+  document.getElementById("lblMir").textContent = t("mir", l);
+  document.getElementById("dMir").textContent   = t("mirD", l);
   document.getElementById("lblLang").textContent = t("lang", l);
   warnText.textContent = t("warn", l);
   resetBtn.textContent = t("reset", l);
   copyBtn.textContent  = t("copy", l);
-  linkInp.value = getURL(l);
+  linkInp.value = getURL();
   document.getElementById("footerText").textContent = t("by", l);
   document.getElementById("verLabel").innerHTML = '<span class="ver-dot-inline ' + (verDot ? verDot.className.replace("ver-dot-inline ", "") : "ok") + '" id="verDot"></span> v' + LOCAL_VER + ' — ' + t("stable", l);
   verDot = document.getElementById("verDot");
@@ -158,15 +156,17 @@ function save(k, v) {
 document.getElementById("mainContent").style.display = "none";
 
 try {
-  chrome.storage.local.get(["encodeEnabled", "signatureEnabled", "format", "lang", "versionEnabled"], function (d) {
+  chrome.storage.local.get(["encodeEnabled", "signatureEnabled", "format", "lang", "versionEnabled", "mirrorEnabled"], function (d) {
     var ena = d.encodeEnabled !== undefined ? d.encodeEnabled : true;
     var sig = d.signatureEnabled !== undefined ? d.signatureEnabled : true;
     var ver = d.versionEnabled !== undefined ? d.versionEnabled : true;
+    var mir = d.mirrorEnabled !== undefined ? d.mirrorEnabled : true;
     var fmt = d.format || "v2";
     if (fmt === "v1") sig = true;
     tglOn.checked = ena;
     tglSig.checked = sig;
     tglVer.checked = ver;
+    tglMir.checked = mir;
     fmtSel.value = fmt;
     setOn(ena);
     lang = d.lang || "en";
@@ -222,6 +222,10 @@ tglSig.addEventListener("change", function () {
   save("signatureEnabled", this.checked);
 });
 
+tglMir.addEventListener("change", function () {
+  save("mirrorEnabled", this.checked);
+});
+
 fmtSel.addEventListener("change", function () {
   save("format", this.value);
   updateWarning();
@@ -271,7 +275,7 @@ resetBtn.addEventListener("click", function () {
   save("_resetRequest", Date.now());
 });
 
-var LOCAL_VER = "2.6";
+var LOCAL_VER = "2.7";
 var MANIFEST_URL = "https://raw.githubusercontent.com/L-Shy-P/TankTrouble-Chat-Unblock/master/manifest.json";
 var verDot  = document.getElementById("verDot");
 var verLabel = document.getElementById("verLabel");
