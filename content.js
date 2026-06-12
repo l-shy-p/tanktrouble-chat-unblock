@@ -1,13 +1,26 @@
-// TT Chat Unblock — MAIN world (V2.7)
+// TT Chat Unblock — MAIN world (V2.8)
 (function () {
   "use strict";
 
-  var VERSION = "2.7";
+  // 镜像网站开关：关闭时跳过所有功能
+  if (location.hostname === "cdn.tanktrouble.com") {
+    var _mirCheck = null;
+    try { _mirCheck = localStorage.getItem("tt-mir"); } catch (e) {}
+    if (_mirCheck === "0") {
+      console.log("[TT] mirror site disabled, skipping all hooks");
+      return;
+    }
+  }
+
+  var VERSION = "2.8";
   var V2_VER = " | v" + VERSION;
   var V2_SIG = V2_VER + " [Chat Unblocker]";
   var V1_SIG = " [Chat Unblocker]";
 
-  var settings = { sig: true, enc: true, fmt: "v2", lang: "en", ver: true, mir: true };
+  var settings = { sig: true, enc: true, fmt: "v2", lang: null, ver: true, mir: true };
+  // 同步读取语言，避免异步 init 消息延迟导致显示英文
+  try { settings.lang = localStorage.getItem("tt-lang"); } catch (e) {}
+  if (!settings.lang) settings.lang = "en";
   var _lastToggle = 0;
   var _lastSentText = "";
   var _isSending = false;
@@ -86,9 +99,9 @@
     if (d.type === "sig")   { settings.sig = d.value; console.log("[TT] sig→" + settings.sig); }
     if (d.type === "enc")   { settings.enc = d.value; console.log("[TT] enc→" + settings.enc); toggleMessages(); }
     if (d.type === "fmt")   { settings.fmt = d.value; console.log("[TT] fmt→" + settings.fmt); }
-    if (d.type === "lang")  { settings.lang = d.value; console.log("[TT] lang→" + settings.lang); }
+    if (d.type === "lang")  { settings.lang = d.value; console.log("[TT] lang→" + settings.lang); toggleMessages(); updateCopyLabels(); }
     if (d.type === "ver")   { settings.ver = d.value; console.log("[TT] ver→" + settings.ver); toggleMessages(); }
-    if (d.type === "mir")   { settings.mir = d.value; console.log("[TT] mir→" + settings.mir); try { localStorage.setItem("tt-mir", d.value ? "1" : "0"); } catch (e) {} location.reload(); }
+    if (d.type === "mir")   { settings.mir = d.value; console.log("[TT] mir→" + settings.mir); try { localStorage.setItem("tt-mir", d.value ? "1" : "0"); } catch (e) {} }
     if (d.type === "reset") { doReset(); }
   });
 
@@ -288,6 +301,11 @@
     return map[key];
   }
 
+  function updateCopyLabels() {
+    if (_iconEl) { _iconEl.textContent = _L("icon"); _iconEl.title = _L("title"); }
+    // 菜单项在下一次 showMenu() 时会自动重建，无需额外处理
+  }
+
   function ensureChatMarked() {
     if (_chatContainerMarked) return true;
     try {
@@ -462,6 +480,7 @@
 
   function showIcon(row) {
     var icon = getOrCreateIcon();
+    icon.title = _L("title");
     var rect = row.getBoundingClientRect();
     var top = rect.top + rect.height / 2 - 12;
     if (top < 4) top = 4;
@@ -867,15 +886,6 @@
     console.log("[TT] copy menu ready (hook stage)");
 
     return true;
-  }
-
-  var MIRROR_HOST = "cdn.tanktrouble.com";
-  var _isMirror = location.hostname === MIRROR_HOST;
-
-  if (_isMirror) {
-    var _mirFlag = null;
-    try { _mirFlag = localStorage.getItem("tt-mir"); } catch (e) {}
-    if (_mirFlag === "0") { console.log("[TT] mirror site disabled, skipping hook"); return; }
   }
 
   var n = 0;
